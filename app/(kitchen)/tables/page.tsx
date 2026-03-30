@@ -1,0 +1,164 @@
+import {
+  deleteTableAction,
+  regenerateTableQrAction,
+  updateTableStatusAction,
+  upsertTableAction,
+} from "@/app/actions";
+import { getPublicBaseUrl } from "@/lib/public-url";
+import { listTablesWithDeleteFlag, tableStatusCounts } from "@/lib/kitchen-db";
+import { TableQrImage } from "@/components/TableQrImage";
+import { SortHeader } from "@/components/SortHeader";
+import { parseSortParams, sortRows } from "@/lib/sort-rows";
+import Link from "next/link";
+
+const STATUSES = ["Available", "Occupied", "Reserved", "Cleaning"] as const;
+
+type SP = { add?: string; edit?: string; error?: string; sort?: string; dir?: string };
+
+export default async function TablesPage({
+  searchParams,
+}: {
+  searchParams: Promise<SP>;
+}) {
+  const sp = await searchParams;
+  const base = await getPublicBaseUrl();
+  const showAdd = sp.add === "1";
+  const editId = sp.edit ? Number(sp.edit) : null;
+  const allRows = listTablesWithDeleteFlag();
+  const editing = editId ? allRows.find((r) => r.table_id === editId) : null;
+  const statusMap = tableStatusCounts();
+  const total = allRows.length;
+  const { sort, dir } = parseSortParams(sp);
+  const rows = sortRows(allRows, sort, dir, {
+    table_id: (r) => r.table_id,
+    table_number: (r) => r.table_number,
+    status: (r) => r.status,
+  });
+
+  const sh = (col: string, label: string) => (
+    <SortHeader basePath="/tables" column={col} label={label} currentSort={sort} currentDir={dir} />
+  );
+
+  return (
+    <div className="mx-auto max-w-6xl">
+      <h2 className="text-2xl font-semibold tracking-tight text-slate-900">Tables</h2>
+      <p className="mt-1 text-sm text-slate-600">
+        Manage dining tables and QR codes. A new QR is generated when a table is set to Occupied.
+      </p>
+
+      {sp.error === "has_orders" ? (
+        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950" role="alert">
+          Cannot delete a table that still has orders on record.
+        </div>
+      ) : null}
+
+      <div className="mt-6 grid gap-3 sm:grid-cols-5">
+        {[
+          { label: "Total", value: total, color: "bg-slate-100 text-slate-800" },
+          { label: "Available", value: statusMap["Available"] ?? 0, color: "bg-emerald-50 text-emerald-800" },
+          { label: "Occupied", value: statusMap["Occupied"] ?? 0, color: "bg-amber-50 text-amber-800" },
+          { label: "Reserved", value: statusMap["Reserved"] ?? 0, color: "bg-sky-50 text-sky-800" },
+          { label: "Cleaning", value: statusMap["Cleaning"] ?? 0, color: "bg-slate-50 text-slate-600" },
+        ].map((c) => (
+          <div key={c.label} className={`rounded-xl px-4 py-3 text-center shadow-sm ring-1 ring-slate-200 ${c.color}`}>
+            <div className="text-2xl font-bold tabular-nums">{c.value}</div>
+            <div className="mt-0.5 text-xs font-medium uppercase tracking-wide">{c.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {showAdd || editing ? (
+        <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h3 className="text-sm font-medium text-slate-900">
+            {editing ? `Edit table ${editing.table_number}` : "Add new table"}
+          </h3>
+          <form action={upsertTableAction} className="mt-4 flex flex-wrap items-end gap-4">
+            {editing ? <input type="hidden" name="table_id" value={editing.table_id} /> : null}
+            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+              Table number
+              <input name="table_number" required placeholder="e.g. 13 or Patio-A" defaultValue={editing?.table_number ?? ""} className="w-48 rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+            </label>
+            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+              Status
+              <select name="status" defaultValue={editing?.status ?? "Available"} className="w-44 rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </label>
+            <button type="submit" className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-slate-950 hover:bg-amber-400">
+              {editing ? "Save" : "Add table"}
+            </button>
+            <Link href="/tables" className="text-sm text-slate-600 underline hover:text-slate-900">Cancel</Link>
+          </form>
+        </div>
+      ) : (
+        <div className="mt-6">
+          <Link href="/tables?add=1" className="inline-block rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow hover:bg-slate-800">+ Add table</Link>
+        </div>
+      )}
+
+      <div className="mt-8 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <table className="w-full min-w-[820px] text-left text-sm">
+          <caption className="sr-only">Tables, status, QR codes, and actions</caption>
+          <thead className="border-b border-slate-200 bg-slate-50 text-xs font-medium uppercase tracking-wide text-slate-500">
+            <tr>
+              {sh("table_id", "ID")}
+              {sh("table_number", "Table")}
+              {sh("status", "Status")}
+              <th className="px-3 py-3">Guest order QR</th>
+              <th className="px-3 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {rows.map((r) => {
+              const orderUrl = `${base}/order/${encodeURIComponent(r.qr_token)}`;
+              return (
+                <tr key={r.table_id} className="align-top hover:bg-slate-50/80">
+                  <td className="px-3 py-4 tabular-nums text-slate-500">{r.table_id}</td>
+                  <td className="px-3 py-4 font-semibold text-slate-900">{r.table_number}</td>
+                  <td className="px-3 py-4">
+                    <form action={updateTableStatusAction} className="flex items-center gap-2">
+                      <input type="hidden" name="table_id" value={r.table_id} />
+                      <select name="status" defaultValue={r.status} className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs">
+                        {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                      <button type="submit" className="rounded-lg bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-slate-700">Set</button>
+                    </form>
+                  </td>
+                  <td className="px-3 py-4">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                      <TableQrImage url={orderUrl} label={`Order at table ${r.table_number}`} />
+                      <a
+                        href={orderUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-1 inline-block rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-800 ring-1 ring-amber-200 hover:bg-amber-100"
+                      >
+                        Open Table {r.table_number} order page
+                      </a>
+                    </div>
+                  </td>
+                  <td className="px-3 py-4 text-right text-sm">
+                    <div className="flex flex-col items-end gap-1.5">
+                      <Link href={`/print/table/${r.table_id}`} target="_blank" className="font-medium text-slate-900 hover:underline" title="Open printable QR slip for this table">
+                        Print QR
+                      </Link>
+                      <Link href={`/tables?edit=${r.table_id}`} className="text-amber-700 hover:underline">Edit</Link>
+                      <form action={regenerateTableQrAction} className="inline">
+                        <input type="hidden" name="table_id" value={r.table_id} />
+                        <button type="submit" className="text-slate-600 hover:underline" title="Invalidates old printed QR codes">New QR</button>
+                      </form>
+                      <form action={deleteTableAction} className="inline">
+                        <input type="hidden" name="table_id" value={r.table_id} />
+                        <button type="submit" disabled={!r.can_delete} className="text-red-600 hover:underline disabled:cursor-not-allowed disabled:opacity-40" title={r.can_delete ? "Delete table" : "Has orders — cannot delete"}>Delete</button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
