@@ -14,9 +14,10 @@ export function sortRows<T>(
     if (typeof va === "number" && typeof vb === "number") {
       return dir === "asc" ? va - vb : vb - va;
     }
-    const sa = String(va).toLowerCase();
-    const sb = String(vb).toLowerCase();
-    const cmp = sa < sb ? -1 : sa > sb ? 1 : 0;
+    const sa = String(va);
+    const sb = String(vb);
+    // Use natural sort so table numbers like 1,2,10,11 sort correctly instead of 1,10,11,2
+    const cmp = sa.localeCompare(sb, undefined, { numeric: true, sensitivity: "base" });
     return dir === "asc" ? cmp : -cmp;
   });
 }
