@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export function SortHeader({
+export const SortHeader = ({
   basePath,
   column,
   label,
@@ -16,7 +16,7 @@ export function SortHeader({
   currentDir: "asc" | "desc";
   extraParams?: Record<string, string>;
   align?: "right";
-}) {
+}) => {
   const active = currentSort === column;
   const nextDir = active && currentDir === "asc" ? "desc" : "asc";
   const params = new URLSearchParams({
@@ -24,11 +24,7 @@ export function SortHeader({
     sort: column,
     dir: nextDir,
   });
-  const arrow = active
-    ? currentDir === "asc"
-      ? " ↑"
-      : " ↓"
-    : " ↕";
+  const arrow = active ? (currentDir === "asc" ? " ↑" : " ↓") : " ↕";
 
   return (
     <th className={`px-3 py-3 ${align === "right" ? "text-right" : ""}`}>
@@ -43,4 +39,4 @@ export function SortHeader({
       </Link>
     </th>
   );
-}
+};

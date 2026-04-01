@@ -7,11 +7,11 @@ import QRCode from "qrcode";
 
 export const dynamic = "force-dynamic";
 
-export default async function PrintTableQrPage({
+const PrintTableQrPage = async ({
   params,
 }: {
   params: Promise<{ tableId: string }>;
-}) {
+}) => {
   const { tableId: rawId } = await params;
   const id = Number(rawId);
   const tables = listTables();
@@ -54,7 +54,9 @@ export default async function PrintTableQrPage({
         <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-500">
           Table
         </p>
-        <p className="mt-1 text-5xl font-extrabold leading-none">{table.table_number}</p>
+        <p className="mt-1 text-5xl font-extrabold leading-none">
+          {table.table_number}
+        </p>
 
         {/* QR */}
         <div className="mt-5">
@@ -70,8 +72,8 @@ export default async function PrintTableQrPage({
 
         <p className="mt-4 text-base font-bold">Scan to order</p>
         <p className="mt-1.5 text-[11px] leading-relaxed text-slate-500">
-          Open your phone camera and point it at the QR code.
-          Browse our menu, add items, and your order goes straight to the kitchen — no waiting.
+          Open your phone camera and point it at the QR code. Browse our menu,
+          add items, and your order goes straight to the kitchen — no waiting.
         </p>
 
         {/* WiFi / useful info */}
@@ -89,10 +91,13 @@ export default async function PrintTableQrPage({
         <hr className="my-4 border-dashed border-slate-300" />
 
         <p className="text-[10px] leading-relaxed text-slate-400">
-          Need help? Flag down any team member.<br />
+          Need help? Flag down any team member.
+          <br />
           Thank you for dining with us!
         </p>
       </div>
     </div>
   );
-}
+};
+
+export default PrintTableQrPage;

@@ -2,20 +2,22 @@
 
 import { useEffect } from "react";
 
-export default function Error({
+const Error = ({
   error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
-}) {
+}) => {
   useEffect(() => {
     console.error(error);
   }, [error]);
 
   return (
     <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 px-4 py-16">
-      <h2 className="text-lg font-semibold text-zinc-900">Something went wrong</h2>
+      <h2 className="text-lg font-semibold text-zinc-900">
+        Something went wrong
+      </h2>
       <p className="max-w-md text-center text-sm text-zinc-600">
         {error.message || "An unexpected error occurred."}
       </p>
@@ -28,4 +30,6 @@ export default function Error({
       </button>
     </div>
   );
-}
+};
+
+export default Error;

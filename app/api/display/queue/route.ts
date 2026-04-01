@@ -4,7 +4,7 @@ import { ensureWsServer } from "@/lib/ws-server";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export const GET = async () => {
   ensureWsServer();
   try {
     return NextResponse.json({
@@ -15,7 +15,7 @@ export async function GET() {
     console.error(e);
     return NextResponse.json(
       { error: "Failed to load kitchen queue" },
-      { status: 500 }
+      { status: 500 },
     );
   }
-}
+};

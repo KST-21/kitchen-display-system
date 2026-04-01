@@ -1,3 +1,5 @@
-export default function PrintLayout({ children }: { children: React.ReactNode }) {
+const PrintLayout = ({ children }: { children: React.ReactNode }) => {
   return children;
-}
+};
+
+export default PrintLayout;

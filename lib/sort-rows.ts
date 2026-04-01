@@ -1,11 +1,11 @@
 type Dir = "asc" | "desc";
 
-export function sortRows<T>(
+export const sortRows = <T>(
   rows: T[],
   sort: string | null,
   dir: Dir,
-  getters: Record<string, (r: T) => string | number>
-): T[] {
+  getters: Record<string, (r: T) => string | number>,
+): T[] => {
   if (!sort || !(sort in getters)) return rows;
   const getter = getters[sort]!;
   return [...rows].sort((a, b) => {
@@ -19,14 +19,17 @@ export function sortRows<T>(
     const cmp = sa < sb ? -1 : sa > sb ? 1 : 0;
     return dir === "asc" ? cmp : -cmp;
   });
-}
+};
 
-export function parseSortParams(sp: { sort?: string; dir?: string }): {
+export const parseSortParams = (sp: {
+  sort?: string;
+  dir?: string;
+}): {
   sort: string | null;
   dir: Dir;
-} {
+} => {
   return {
     sort: sp.sort ?? null,
     dir: sp.dir === "desc" ? "desc" : "asc",
   };
-}
+};

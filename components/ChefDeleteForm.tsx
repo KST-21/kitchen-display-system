@@ -2,7 +2,7 @@
 
 import { deleteChefAction } from "@/app/actions";
 
-export function ChefDeleteForm({ chefId }: { chefId: number }) {
+export const ChefDeleteForm = ({ chefId }: { chefId: number }) => {
   return (
     <form
       action={deleteChefAction}
@@ -10,7 +10,7 @@ export function ChefDeleteForm({ chefId }: { chefId: number }) {
       onSubmit={(e) => {
         if (
           !confirm(
-            "Remove this chef? They will be unassigned from any queue tickets first."
+            "Remove this chef? They will be unassigned from any queue tickets first.",
           )
         ) {
           e.preventDefault();
@@ -23,4 +23,4 @@ export function ChefDeleteForm({ chefId }: { chefId: number }) {
       </button>
     </form>
   );
-}
+};

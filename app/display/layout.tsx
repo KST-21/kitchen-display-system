@@ -7,14 +7,12 @@ export const metadata: Metadata = {
   description: "Large-format kitchen pass queue",
 };
 
-export default function DisplayLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+const DisplayLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-slate-100 text-slate-900 antialiased selection:bg-amber-200/80 selection:text-amber-950">
       {children}
     </div>
   );
-}
+};
+
+export default DisplayLayout;

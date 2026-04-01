@@ -9,17 +9,18 @@ import fs from "fs";
 import path from "path";
 
 const DB_DIR =
-  process.env.KITCHEN_DATA_DIR?.trim() ||
-  path.join(process.cwd(), "data");
+  process.env.KITCHEN_DATA_DIR?.trim() || path.join(process.cwd(), "data");
 const DB_PATH = path.join(DB_DIR, "kitchen.db");
 
-const globalForDb = globalThis as unknown as { __kitchenDb?: Database.Database };
+const globalForDb = globalThis as unknown as {
+  __kitchenDb?: Database.Database;
+};
 
-export function newQrToken(): string {
+export const newQrToken = (): string => {
   return randomBytes(24).toString("base64url");
-}
+};
 
-function createFreshSchema(db: Database.Database) {
+const createFreshSchema = (db: Database.Database) => {
   db.exec(`
     CREATE TABLE IF NOT EXISTS "Table" (
       table_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -71,16 +72,16 @@ function createFreshSchema(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_order_item_order ON Order_Item(order_id);
     CREATE INDEX IF NOT EXISTS idx_kitchen_queue_chef ON KitchenQueue(chef_id);
   `);
-}
+};
 
-function openDb(): Database.Database {
+const openDb = (): Database.Database => {
   fs.mkdirSync(DB_DIR, { recursive: true });
   const db = new Database(DB_PATH);
   db.pragma("foreign_keys = ON");
 
   const legacyCustomer = db
     .prepare(
-      `SELECT 1 FROM sqlite_master WHERE type='table' AND name='Customer'`
+      `SELECT 1 FROM sqlite_master WHERE type='table' AND name='Customer'`,
     )
     .get();
   if (legacyCustomer) {
@@ -100,26 +101,28 @@ function openDb(): Database.Database {
   createFreshSchema(db);
   migrateMenuItemImageUrl(db);
   return db;
-}
+};
 
-function migrateMenuItemImageUrl(db: Database.Database) {
-  const cols = db.prepare("PRAGMA table_info(Menu_Item)").all() as { name: string }[];
+const migrateMenuItemImageUrl = (db: Database.Database) => {
+  const cols = db.prepare("PRAGMA table_info(Menu_Item)").all() as {
+    name: string;
+  }[];
   if (!cols.some((c) => c.name === "image_url")) {
     db.exec("ALTER TABLE Menu_Item ADD COLUMN image_url TEXT");
   }
-}
+};
 
-export function getDb(): Database.Database {
+export const getDb = (): Database.Database => {
   if (!globalForDb.__kitchenDb) {
     globalForDb.__kitchenDb = openDb();
     seedDemoData();
   }
   return globalForDb.__kitchenDb;
-}
+};
 
-function nowIso(): string {
+const nowIso = (): string => {
   return new Date().toISOString().slice(0, 19).replace("T", " ");
-}
+};
 
 export type RestaurantTable = {
   table_id: number;
@@ -165,108 +168,124 @@ export type QueueRow = {
   order_status: string;
 };
 
-export function dashboardCounts() {
+export const dashboardCounts = () => {
   const db = getDb();
   return {
-    tables: db.prepare('SELECT COUNT(*) AS c FROM "Table"').get() as { c: number },
+    tables: db.prepare('SELECT COUNT(*) AS c FROM "Table"').get() as {
+      c: number;
+    },
     chefs: db.prepare("SELECT COUNT(*) AS c FROM Chef").get() as { c: number },
-    menu: db.prepare("SELECT COUNT(*) AS c FROM Menu_Item").get() as { c: number },
-    orders: db.prepare('SELECT COUNT(*) AS c FROM "Order"').get() as { c: number },
-    queue: db.prepare("SELECT COUNT(*) AS c FROM KitchenQueue").get() as { c: number },
+    menu: db.prepare("SELECT COUNT(*) AS c FROM Menu_Item").get() as {
+      c: number;
+    },
+    orders: db.prepare('SELECT COUNT(*) AS c FROM "Order"').get() as {
+      c: number;
+    },
+    queue: db.prepare("SELECT COUNT(*) AS c FROM KitchenQueue").get() as {
+      c: number;
+    },
   };
-}
+};
 
-export function listTables(): RestaurantTable[] {
+export const listTables = (): RestaurantTable[] => {
   return getDb()
     .prepare('SELECT * FROM "Table" ORDER BY table_id')
     .all() as RestaurantTable[];
-}
+};
 
-export function tableStatusCounts(): Record<string, number> {
+export const tableStatusCounts = (): Record<string, number> => {
   const rows = getDb()
     .prepare('SELECT status, COUNT(*) AS c FROM "Table" GROUP BY status')
     .all() as { status: string; c: number }[];
   const map: Record<string, number> = {};
   for (const r of rows) map[r.status] = r.c;
   return map;
-}
+};
 
-export type RestaurantTableWithDelete = RestaurantTable & { can_delete: boolean };
+export type RestaurantTableWithDelete = RestaurantTable & {
+  can_delete: boolean;
+};
 
-export function canDeleteTable(tableId: number): boolean {
+export const canDeleteTable = (tableId: number): boolean => {
   const row = getDb()
     .prepare('SELECT COUNT(*) AS c FROM "Order" WHERE table_id = ?')
     .get(tableId) as { c: number };
   return row.c === 0;
-}
+};
 
-export function listTablesWithDeleteFlag(): RestaurantTableWithDelete[] {
+export const listTablesWithDeleteFlag = (): RestaurantTableWithDelete[] => {
   return listTables().map((t) => ({
     ...t,
     can_delete: canDeleteTable(t.table_id),
   }));
-}
+};
 
-export function getTableByQrToken(token: string): RestaurantTable | null {
+export const getTableByQrToken = (token: string): RestaurantTable | null => {
   const row = getDb()
     .prepare('SELECT * FROM "Table" WHERE qr_token = ?')
     .get(token.trim()) as RestaurantTable | undefined;
   return row ?? null;
-}
+};
 
-export function upsertTable(
+export const upsertTable = (
   id: number | null,
   table_number: string,
-  status: string
-) {
+  status: string,
+) => {
   const db = getDb();
   const num = table_number.trim();
   if (!num) throw new Error("Table number is required");
   if (id == null) {
     db.prepare(
-      'INSERT INTO "Table" (table_number, status, qr_token) VALUES (?, ?, ?)'
+      'INSERT INTO "Table" (table_number, status, qr_token) VALUES (?, ?, ?)',
     ).run(num, status || "Available", newQrToken());
   } else {
     db.prepare(
-      'UPDATE "Table" SET table_number = ?, status = ? WHERE table_id = ?'
+      'UPDATE "Table" SET table_number = ?, status = ? WHERE table_id = ?',
     ).run(num, status || "Available", id);
   }
-}
+};
 
-export function regenerateTableQrToken(tableId: number) {
+export const regenerateTableQrToken = (tableId: number) => {
   const db = getDb();
   const tok = newQrToken();
   db.prepare('UPDATE "Table" SET qr_token = ? WHERE table_id = ?').run(
     tok,
-    tableId
+    tableId,
   );
   return tok;
-}
+};
 
-export function deleteTable(id: number) {
+export const deleteTable = (id: number) => {
   getDb().prepare('DELETE FROM "Table" WHERE table_id = ?').run(id);
-}
+};
 
-export function listChefs(): Chef[] {
+export const listChefs = (): Chef[] => {
   return getDb().prepare("SELECT * FROM Chef ORDER BY chef_id").all() as Chef[];
-}
+};
 
-export function upsertChef(id: number | null, name: string, phone: string) {
+export const upsertChef = (id: number | null, name: string, phone: string) => {
   const db = getDb();
   if (id == null) {
     db.prepare("INSERT INTO Chef (name, phone) VALUES (?, ?)").run(name, phone);
   } else {
-    db.prepare("UPDATE Chef SET name = ?, phone = ? WHERE chef_id = ?").run(name, phone, id);
+    db.prepare("UPDATE Chef SET name = ?, phone = ? WHERE chef_id = ?").run(
+      name,
+      phone,
+      id,
+    );
   }
-}
+};
 
-export function deleteChef(id: number) {
+export const deleteChef = (id: number) => {
   const db = getDb();
-  db.prepare("UPDATE KitchenQueue SET chef_id = NULL WHERE chef_id = ?").run(id);
+  db.prepare("UPDATE KitchenQueue SET chef_id = NULL WHERE chef_id = ?").run(
+    id,
+  );
   db.prepare("DELETE FROM Chef WHERE chef_id = ?").run(id);
-}
+};
 
-export function listMenuItems(): MenuItem[] {
+export const listMenuItems = (): MenuItem[] => {
   const raw = getDb()
     .prepare("SELECT * FROM Menu_Item ORDER BY menu_id")
     .all() as (Omit<MenuItem, "image_url"> & { image_url?: string | null })[];
@@ -277,62 +296,63 @@ export function listMenuItems(): MenuItem[] {
         ? String(r.image_url).trim()
         : null,
   }));
-}
+};
 
 export type MenuItemWithDelete = MenuItem & { can_delete: boolean };
 
-export function canDeleteMenuItem(menuId: number): boolean {
+export const canDeleteMenuItem = (menuId: number): boolean => {
   const row = getDb()
     .prepare("SELECT COUNT(*) AS c FROM Order_Item WHERE menu_id = ?")
     .get(menuId) as { c: number };
   return row.c === 0;
-}
+};
 
-export function listMenuItemsWithDeleteFlag(): MenuItemWithDelete[] {
+export const listMenuItemsWithDeleteFlag = (): MenuItemWithDelete[] => {
   return listMenuItems().map((m) => ({
     ...m,
     can_delete: canDeleteMenuItem(m.menu_id),
   }));
-}
+};
 
-export function upsertMenuItem(
+export const upsertMenuItem = (
   id: number | null,
   item_name: string,
   price: number,
   is_available: boolean,
-  image_url: string | null
-) {
+  image_url: string | null,
+) => {
   const db = getDb();
   const av = is_available ? 1 : 0;
   const img = image_url?.trim() || null;
   if (id == null) {
     db.prepare(
-      "INSERT INTO Menu_Item (item_name, price, is_available, image_url) VALUES (?, ?, ?, ?)"
+      "INSERT INTO Menu_Item (item_name, price, is_available, image_url) VALUES (?, ?, ?, ?)",
     ).run(item_name, price, av, img);
   } else {
     db.prepare(
-      "UPDATE Menu_Item SET item_name = ?, price = ?, is_available = ?, image_url = ? WHERE menu_id = ?"
+      "UPDATE Menu_Item SET item_name = ?, price = ?, is_available = ?, image_url = ? WHERE menu_id = ?",
     ).run(item_name, price, av, img, id);
   }
-}
+};
 
-export function deleteMenuItem(id: number) {
+export const deleteMenuItem = (id: number) => {
   getDb().prepare("DELETE FROM Menu_Item WHERE menu_id = ?").run(id);
-}
+};
 
-function nextQueuePosition(db: Database.Database): number {
+const nextQueuePosition = (db: Database.Database): number => {
   const row = db
     .prepare("SELECT COALESCE(MAX(position), 0) + 1 AS n FROM KitchenQueue")
     .get() as { n: number };
   return row.n;
-}
+};
 
-export function createOrderWithItems(
+export const createOrderWithItems = (
   tableId: number,
   lineItems: { menuId: number; quantity: number; specialRequest: string }[],
-  orderStatus = "Pending"
-): number {
-  if (!lineItems.length) throw new Error("Order must include at least one line item");
+  orderStatus = "Pending",
+): number => {
+  if (!lineItems.length)
+    throw new Error("Order must include at least one line item");
   const db = getDb();
 
   const tableOk = db
@@ -341,7 +361,7 @@ export function createOrderWithItems(
   if (!tableOk) throw new Error("Table not found");
 
   const menuStmt = db.prepare(
-    "SELECT is_available FROM Menu_Item WHERE menu_id = ?"
+    "SELECT is_available FROM Menu_Item WHERE menu_id = ?",
   );
   for (const li of lineItems) {
     if (!Number.isInteger(li.quantity) || li.quantity < 1) {
@@ -350,7 +370,9 @@ export function createOrderWithItems(
     const m = menuStmt.get(li.menuId) as { is_available: number } | undefined;
     if (!m) throw new Error("Unknown menu item on this order");
     if (m.is_available !== 1) {
-      throw new Error("One or more items are marked unavailable and cannot be ordered");
+      throw new Error(
+        "One or more items are marked unavailable and cannot be ordered",
+      );
     }
   }
 
@@ -358,60 +380,60 @@ export function createOrderWithItems(
   const run = db.transaction(() => {
     const r = db
       .prepare(
-        'INSERT INTO "Order" (table_id, created_at, order_status, order_number) VALUES (?, ?, ?, NULL)'
+        'INSERT INTO "Order" (table_id, created_at, order_status, order_number) VALUES (?, ?, ?, NULL)',
       )
       .run(tableId, ts, orderStatus);
     const orderId = Number(r.lastInsertRowid);
     db.prepare('UPDATE "Order" SET order_number = ? WHERE order_id = ?').run(
       orderId,
-      orderId
+      orderId,
     );
     const ins = db.prepare(
-      `INSERT INTO Order_Item (order_id, menu_id, quantity, special_request) VALUES (?, ?, ?, ?)`
+      `INSERT INTO Order_Item (order_id, menu_id, quantity, special_request) VALUES (?, ?, ?, ?)`,
     );
     for (const li of lineItems) {
       ins.run(
         orderId,
         li.menuId,
         li.quantity,
-        li.specialRequest.trim() || null
+        li.specialRequest.trim() || null,
       );
     }
     const pos = nextQueuePosition(db);
     db.prepare(
-      `INSERT INTO KitchenQueue (order_id, chef_id, position, created_at, status, priority) VALUES (?, NULL, ?, ?, 'Queued', 0)`
+      `INSERT INTO KitchenQueue (order_id, chef_id, position, created_at, status, priority) VALUES (?, NULL, ?, ?, 'Queued', 0)`,
     ).run(orderId, pos, ts);
     return orderId;
   });
   return run();
-}
+};
 
-export function listOrders(): OrderRow[] {
+export const listOrders = (): OrderRow[] => {
   return getDb()
     .prepare(
       `SELECT o.order_id, o.table_id, t.table_number, o.created_at, o.order_status, o.order_number
        FROM "Order" o JOIN "Table" t ON t.table_id = o.table_id
-       ORDER BY o.order_id DESC`
+       ORDER BY o.order_id DESC`,
     )
     .all() as OrderRow[];
-}
+};
 
-export function getOrderItems(orderId: number): OrderLine[] {
+export const getOrderItems = (orderId: number): OrderLine[] => {
   return getDb()
     .prepare(
       `SELECT oi.order_item_id, oi.menu_id, m.item_name, oi.quantity, oi.special_request, m.price
        FROM Order_Item oi JOIN Menu_Item m ON m.menu_id = oi.menu_id
-       WHERE oi.order_id = ? ORDER BY oi.order_item_id`
+       WHERE oi.order_id = ? ORDER BY oi.order_item_id`,
     )
     .all(orderId) as OrderLine[];
-}
+};
 
-export function mapOrderIdToLines(): Map<number, OrderLine[]> {
+export const mapOrderIdToLines = (): Map<number, OrderLine[]> => {
   const rows = getDb()
     .prepare(
       `SELECT oi.order_id, oi.order_item_id, oi.menu_id, m.item_name, oi.quantity, oi.special_request, m.price
        FROM Order_Item oi JOIN Menu_Item m ON m.menu_id = oi.menu_id
-       ORDER BY oi.order_id DESC, oi.order_item_id ASC`
+       ORDER BY oi.order_id DESC, oi.order_item_id ASC`,
     )
     .all() as (OrderLine & { order_id: number })[];
   const map = new Map<number, OrderLine[]>();
@@ -422,13 +444,15 @@ export function mapOrderIdToLines(): Map<number, OrderLine[]> {
     map.set(order_id, list);
   }
   return map;
-}
+};
 
-export function updateOrderStatus(orderId: number, status: string) {
-  getDb().prepare('UPDATE "Order" SET order_status = ? WHERE order_id = ?').run(status, orderId);
-}
+export const updateOrderStatus = (orderId: number, status: string) => {
+  getDb()
+    .prepare('UPDATE "Order" SET order_status = ? WHERE order_id = ?')
+    .run(status, orderId);
+};
 
-export function listKitchenQueue(): QueueRow[] {
+export const listKitchenQueue = (): QueueRow[] => {
   return getDb()
     .prepare(
       `SELECT k.queue_id, k.order_id, k.chef_id, ch.name AS chef_name,
@@ -438,34 +462,35 @@ export function listKitchenQueue(): QueueRow[] {
        JOIN "Order" o ON o.order_id = k.order_id
        JOIN "Table" t ON t.table_id = o.table_id
        LEFT JOIN Chef ch ON ch.chef_id = k.chef_id
-       ORDER BY k.priority DESC, k.position ASC, k.queue_id ASC`
+       ORDER BY k.priority DESC, k.position ASC, k.queue_id ASC`,
     )
     .all() as QueueRow[];
-}
+};
 
-export function updateQueue(
+export const updateQueue = (
   queueId: number,
   chefId: number | null,
-  status: string
-) {
+  status: string,
+) => {
   const db = getDb();
-  db.prepare("UPDATE KitchenQueue SET chef_id = ?, status = ? WHERE queue_id = ?")
-    .run(chefId, status, queueId);
+  db.prepare(
+    "UPDATE KitchenQueue SET chef_id = ?, status = ? WHERE queue_id = ?",
+  ).run(chefId, status, queueId);
 
   if (status === "Served") {
     const row = db
       .prepare(
-        `SELECT o.table_id FROM KitchenQueue k JOIN "Order" o ON o.order_id = k.order_id WHERE k.queue_id = ?`
+        `SELECT o.table_id FROM KitchenQueue k JOIN "Order" o ON o.order_id = k.order_id WHERE k.queue_id = ?`,
       )
       .get(queueId) as { table_id: number } | undefined;
     if (row) {
       regenerateTableQrToken(row.table_id);
     }
   }
-}
+};
 
 /** Advance queue status to the next column: Queued→Preparing→Ready→Served */
-export function advanceQueueStatus(queueId: number, chefId?: number | null) {
+export const advanceQueueStatus = (queueId: number, chefId?: number | null) => {
   const db = getDb();
   const row = db
     .prepare("SELECT status, chef_id FROM KitchenQueue WHERE queue_id = ?")
@@ -477,25 +502,25 @@ export function advanceQueueStatus(queueId: number, chefId?: number | null) {
   const next = order[idx + 1]!;
   const assignedChef = chefId !== undefined ? chefId : row.chef_id;
   updateQueue(queueId, assignedChef, next);
-}
+};
 
 /** Remove a served queue entry (marks order Completed too). */
-export function removeServedQueueEntry(queueId: number) {
+export const removeServedQueueEntry = (queueId: number) => {
   const db = getDb();
   const row = db
     .prepare(
-      `SELECT k.status, k.order_id FROM KitchenQueue k WHERE k.queue_id = ?`
+      `SELECT k.status, k.order_id FROM KitchenQueue k WHERE k.queue_id = ?`,
     )
     .get(queueId) as { status: string; order_id: number } | undefined;
   if (!row || row.status !== "Served") return;
   db.prepare('UPDATE "Order" SET order_status = ? WHERE order_id = ?').run(
     "Completed",
-    row.order_id
+    row.order_id,
   );
   db.prepare("DELETE FROM KitchenQueue WHERE queue_id = ?").run(queueId);
-}
+};
 
-export function clearAllData() {
+export const clearAllData = () => {
   getDb().exec(`
     DELETE FROM KitchenQueue;
     DELETE FROM Order_Item;
@@ -504,12 +529,14 @@ export function clearAllData() {
     DELETE FROM Menu_Item;
     DELETE FROM Chef;
   `);
-}
+};
 
-export function seedRealisticDataset(force: boolean) {
+export const seedRealisticDataset = (force: boolean) => {
   const db = getDb();
   if (!force) {
-    const c = db.prepare('SELECT COUNT(*) AS n FROM "Table"').get() as { n: number };
+    const c = db.prepare('SELECT COUNT(*) AS n FROM "Table"').get() as {
+      n: number;
+    };
     if (c.n > 0) return;
   } else {
     clearAllData();
@@ -541,7 +568,12 @@ export function seedRealisticDataset(force: boolean) {
     `https://images.unsplash.com/${id}?w=400&h=400&fit=crop&q=80`;
   const menu: [string, number, number, string][] = [
     ["Chicken Satay (4pc)", 11.95, 1, U("photo-1555939594-58d7cb561ad1")],
-    ["Vegetable Spring Rolls (6pc)", 8.5, 1, U("photo-1617093727343-374954b7b503")],
+    [
+      "Vegetable Spring Rolls (6pc)",
+      8.5,
+      1,
+      U("photo-1617093727343-374954b7b503"),
+    ],
     ["Crispy Calamari", 14.0, 1, U("photo-1599487488170-d11ec9c172f0")],
     ["Tom Yum Soup", 9.5, 1, U("photo-1547592166-23ac45744acd")],
     ["Tom Kha Gai", 10.5, 1, U("photo-1608212758884-46f3d8967ac0")],
@@ -556,7 +588,12 @@ export function seedRealisticDataset(force: boolean) {
     ["Steamed Jasmine Rice", 3.5, 1, U("photo-1586201375761-83865001e31c")],
     ["Garlic Naan", 4.0, 1, U("photo-1601050690117-94faeaa0d46d")],
     ["Mango Sticky Rice", 8.0, 1, U("photo-1563823253-cc3a63d386db")],
-    ["Chocolate Brownie + ice cream", 7.5, 1, U("photo-1607920598183-13fd8ea74312")],
+    [
+      "Chocolate Brownie + ice cream",
+      7.5,
+      1,
+      U("photo-1607920598183-13fd8ea74312"),
+    ],
     ["Thai Iced Tea", 4.5, 1, U("photo-1556679343-c7306c19756b")],
     ["Iced Tea (unsweetened)", 3.0, 1, U("photo-1556679343-c7306c19756b")],
     ["Sparkling Water", 3.5, 1, U("photo-1548839140-29a749e1cf4d")],
@@ -565,7 +602,7 @@ export function seedRealisticDataset(force: boolean) {
   ];
 
   const insT = db.prepare(
-    'INSERT INTO "Table" (table_number, status, qr_token) VALUES (?, ?, ?)'
+    'INSERT INTO "Table" (table_number, status, qr_token) VALUES (?, ?, ?)',
   );
   for (const tn of tableNumbers) {
     insT.run(tn, "Available", newQrToken());
@@ -575,12 +612,14 @@ export function seedRealisticDataset(force: boolean) {
   for (const row of chefs) insCh.run(row[0], row[1]);
 
   const insM = db.prepare(
-    "INSERT INTO Menu_Item (item_name, price, is_available, image_url) VALUES (?, ?, ?, ?)"
+    "INSERT INTO Menu_Item (item_name, price, is_available, image_url) VALUES (?, ?, ?, ?)",
   );
   for (const row of menu) insM.run(row[0], row[1], row[2], row[3]);
 
   const menuByName: Record<string, number> = {};
-  for (const r of db.prepare("SELECT menu_id, item_name FROM Menu_Item").all() as {
+  for (const r of db
+    .prepare("SELECT menu_id, item_name FROM Menu_Item")
+    .all() as {
     menu_id: number;
     item_name: string;
   }[]) {
@@ -592,7 +631,9 @@ export function seedRealisticDataset(force: boolean) {
     }[]
   ).map((x) => x.table_id);
   const chefIds = (
-    db.prepare("SELECT chef_id FROM Chef ORDER BY chef_id").all() as { chef_id: number }[]
+    db.prepare("SELECT chef_id FROM Chef ORDER BY chef_id").all() as {
+      chef_id: number;
+    }[]
   ).map((x) => x.chef_id);
 
   type Scenario = [
@@ -603,7 +644,16 @@ export function seedRealisticDataset(force: boolean) {
     string,
   ];
   const scenarios: Scenario[] = [
-    [0, [["Pad Thai", 2, "Extra lime, mild spice"], ["Thai Iced Tea", 2, ""]], "Pending", null, "Queued"],
+    [
+      0,
+      [
+        ["Pad Thai", 2, "Extra lime, mild spice"],
+        ["Thai Iced Tea", 2, ""],
+      ],
+      "Pending",
+      null,
+      "Queued",
+    ],
     [
       1,
       [
@@ -658,7 +708,10 @@ export function seedRealisticDataset(force: boolean) {
     ],
     [
       6,
-      [["Veggie Burger + fries", 1, "No mayo"], ["Sparkling Water", 1, ""]],
+      [
+        ["Veggie Burger + fries", 1, "No mayo"],
+        ["Sparkling Water", 1, ""],
+      ],
       "Completed",
       4,
       "Served",
@@ -714,13 +767,13 @@ export function seedRealisticDataset(force: boolean) {
   }
 
   const setOccupied = db.prepare(
-    'UPDATE "Table" SET status = ? WHERE table_id = ?'
+    'UPDATE "Table" SET status = ? WHERE table_id = ?',
   );
   for (const tid of tablesWithOrders) {
     setOccupied.run("Occupied", tid);
   }
-}
+};
 
-export function seedDemoData() {
+export const seedDemoData = () => {
   seedRealisticDataset(false);
-}
+};

@@ -1,12 +1,12 @@
 import QRCode from "qrcode";
 
-export async function TableQrImage({
+export const TableQrImage = async ({
   url,
   label,
 }: {
   url: string;
   label: string;
-}) {
+}) => {
   const src = await QRCode.toDataURL(url, {
     width: 176,
     margin: 1,
@@ -24,4 +24,4 @@ export async function TableQrImage({
       />
     </>
   );
-}
+};

@@ -4,7 +4,7 @@ import { resetAndSeedAction } from "@/app/actions";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
-export function ResetDatabaseButton() {
+export const ResetDatabaseButton = () => {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   return (
@@ -15,7 +15,7 @@ export function ResetDatabaseButton() {
       onClick={() => {
         if (
           !confirm(
-            "Delete ALL data and load the full test fixture? This cannot be undone."
+            "Delete ALL data and load the full test fixture? This cannot be undone.",
           )
         )
           return;
@@ -28,4 +28,4 @@ export function ResetDatabaseButton() {
       {pending ? "Resetting…" : "Reset DB & load full test data"}
     </button>
   );
-}
+};

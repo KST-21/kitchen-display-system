@@ -4,13 +4,13 @@
  * Replaces the root layout when an error bubbles up from it.
  * Must define its own <html> and <body> (no shared CSS from root layout).
  */
-export default function GlobalError({
+const GlobalError = ({
   error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
-}) {
+}) => {
   return (
     <html lang="en">
       <body
@@ -33,8 +33,16 @@ export default function GlobalError({
             textAlign: "center",
           }}
         >
-          <h2 style={{ fontSize: "1.125rem", fontWeight: 600 }}>Something went wrong</h2>
-          <p style={{ fontSize: "0.875rem", color: "#a1a1aa", maxWidth: "24rem" }}>
+          <h2 style={{ fontSize: "1.125rem", fontWeight: 600 }}>
+            Something went wrong
+          </h2>
+          <p
+            style={{
+              fontSize: "0.875rem",
+              color: "#a1a1aa",
+              maxWidth: "24rem",
+            }}
+          >
             {error.message || "Kitchen OS hit an unexpected error."}
           </p>
           <button
@@ -57,4 +65,6 @@ export default function GlobalError({
       </body>
     </html>
   );
-}
+};
+
+export default GlobalError;
