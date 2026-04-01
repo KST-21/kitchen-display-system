@@ -1,6 +1,6 @@
 "use client";
 
-export function PrintButton() {
+export const PrintButton = () => {
   return (
     <button
       type="button"
@@ -10,4 +10,4 @@ export function PrintButton() {
       Print this slip
     </button>
   );
-}
+};

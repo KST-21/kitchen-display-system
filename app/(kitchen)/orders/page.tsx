@@ -7,14 +7,9 @@ import {
   mapOrderIdToLines,
 } from "@/lib/kitchen-db";
 
-const STATUSES = [
-  "Pending",
-  "In progress",
-  "Completed",
-  "Cancelled",
-] as const;
+const STATUSES = ["Pending", "In progress", "Completed", "Cancelled"] as const;
 
-export default function OrdersPage() {
+const OrdersPage = () => {
   const orders = listOrders();
   const linesByOrder = mapOrderIdToLines();
   const tables = listTables();
@@ -22,7 +17,9 @@ export default function OrdersPage() {
 
   return (
     <div className="mx-auto max-w-5xl">
-      <h2 className="text-2xl font-semibold tracking-tight text-slate-900">Orders</h2>
+      <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+        Orders
+      </h2>
       <p className="mt-1 text-sm text-slate-600">
         Orders by table, line items, and order-level status.
       </p>
@@ -31,20 +28,19 @@ export default function OrdersPage() {
         <OrderForm tables={tables} menu={menu} />
       </div>
 
-      <h3 className="mt-12 text-lg font-medium text-slate-900">Recent orders</h3>
+      <h3 className="mt-12 text-lg font-medium text-slate-900">
+        Recent orders
+      </h3>
       <div className="mt-4 space-y-6">
         {orders.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-600">
-            No orders yet. Place one above, use guest QR ordering, or load test data from the
-            dashboard.
+            No orders yet. Place one above, use guest QR ordering, or load test
+            data from the dashboard.
           </p>
         ) : null}
         {orders.map((o) => {
           const lines = linesByOrder.get(o.order_id) ?? [];
-          const subtotal = lines.reduce(
-            (s, l) => s + l.price * l.quantity,
-            0
-          );
+          const subtotal = lines.reduce((s, l) => s + l.price * l.quantity, 0);
           return (
             <div
               key={o.order_id}
@@ -60,9 +56,13 @@ export default function OrdersPage() {
                         · #{o.order_number}
                       </span>
                     ) : null}{" "}
-                    <span className="font-normal text-slate-500">· {o.created_at}</span>
+                    <span className="font-normal text-slate-500">
+                      · {o.created_at}
+                    </span>
                   </div>
-                  <div className="mt-1 text-sm text-slate-600">Table {o.table_number}</div>
+                  <div className="mt-1 text-sm text-slate-600">
+                    Table {o.table_number}
+                  </div>
                 </div>
                 <form
                   action={updateOrderStatusAction}
@@ -91,9 +91,13 @@ export default function OrdersPage() {
               <ul className="mt-4 space-y-2 border-t border-slate-100 pt-4 text-sm">
                 {lines.map((l) => (
                   <li key={l.order_item_id}>
-                    <span className="font-medium">{l.item_name}</span> ×{l.quantity}
+                    <span className="font-medium">{l.item_name}</span> ×
+                    {l.quantity}
                     {l.special_request ? (
-                      <span className="text-slate-600"> — {l.special_request}</span>
+                      <span className="text-slate-600">
+                        {" "}
+                        — {l.special_request}
+                      </span>
                     ) : null}
                     <span className="float-right tabular-nums text-slate-700">
                       ${(l.price * l.quantity).toFixed(2)}
@@ -110,4 +114,6 @@ export default function OrdersPage() {
       </div>
     </div>
   );
-}
+};
+
+export default OrdersPage;

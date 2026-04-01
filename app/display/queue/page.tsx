@@ -2,7 +2,7 @@ import { QueueDisplayBoard } from "@/components/QueueDisplayBoard";
 import { listChefs, listKitchenQueue } from "@/lib/kitchen-db";
 import { ensureWsServer } from "@/lib/ws-server";
 
-export default function QueueDisplayPage() {
+const QueueDisplayPage = () => {
   ensureWsServer();
   const initialRows = listKitchenQueue();
   const initialChefs = listChefs();
@@ -14,4 +14,6 @@ export default function QueueDisplayPage() {
       pollIntervalSeconds={10}
     />
   );
-}
+};
+
+export default QueueDisplayPage;

@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
-import { advanceQueueStatus, listChefs, listKitchenQueue } from "@/lib/kitchen-db";
+import {
+  advanceQueueStatus,
+  listChefs,
+  listKitchenQueue,
+} from "@/lib/kitchen-db";
 import { broadcastKitchenState } from "@/lib/ws-server";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request) {
+export const POST = async (request: Request) => {
   try {
     const body = await request.json();
     const queueId = Number(body.queue_id);
@@ -14,7 +18,7 @@ export async function POST(request: Request) {
     const chefId = body.chef_id != null ? Number(body.chef_id) : undefined;
     advanceQueueStatus(
       queueId,
-      chefId !== undefined && Number.isFinite(chefId) ? chefId : undefined
+      chefId !== undefined && Number.isFinite(chefId) ? chefId : undefined,
     );
     broadcastKitchenState();
     return NextResponse.json({
@@ -25,7 +29,7 @@ export async function POST(request: Request) {
     console.error(e);
     return NextResponse.json(
       { error: "Failed to advance queue status" },
-      { status: 500 }
+      { status: 500 },
     );
   }
-}
+};

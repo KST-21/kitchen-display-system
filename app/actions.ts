@@ -21,33 +21,36 @@ const TABLE_STATUSES = [
   "Cleaning",
 ] as const;
 
-function revalidateAll() {
+const revalidateAll = () => {
   revalidatePath("/", "layout");
   revalidatePath("/display/queue");
   revalidatePath("/tables");
   revalidatePath("/order", "layout");
   broadcastKitchenState();
-}
+};
 
-function parseOptionalId(raw: FormDataEntryValue | null): number | null {
+const parseOptionalId = (raw: FormDataEntryValue | null): number | null => {
   if (raw == null || raw === "") return null;
   const n = Number(raw);
   return Number.isFinite(n) ? n : null;
-}
+};
 
-function parsePrice(raw: FormDataEntryValue | null): number | null {
+const parsePrice = (raw: FormDataEntryValue | null): number | null => {
   if (raw == null) return null;
   const s = String(raw).trim().replace(/,/g, "");
   const n = Number(s);
   if (!Number.isFinite(n) || n < 0) return null;
   return Math.round(n * 100) / 100;
-}
+};
 
-function parseOrderLines(
-  linesRaw: string
+const parseOrderLines = (
+  linesRaw: string,
 ):
-  | { ok: true; lines: { menuId: number; quantity: number; specialRequest: string }[] }
-  | { ok: false; message: string } {
+  | {
+      ok: true;
+      lines: { menuId: number; quantity: number; specialRequest: string }[];
+    }
+  | { ok: false; message: string } => {
   let parsed: unknown;
   try {
     parsed = JSON.parse(linesRaw);
@@ -57,7 +60,8 @@ function parseOrderLines(
   if (!Array.isArray(parsed) || parsed.length === 0) {
     return { ok: false, message: "Add at least one line item." };
   }
-  const lines: { menuId: number; quantity: number; specialRequest: string }[] = [];
+  const lines: { menuId: number; quantity: number; specialRequest: string }[] =
+    [];
   for (const entry of parsed) {
     if (entry === null || typeof entry !== "object") {
       return { ok: false, message: "Invalid line item data." };
@@ -76,9 +80,9 @@ function parseOrderLines(
     lines.push({ menuId, quantity: qty, specialRequest });
   }
   return { ok: true, lines };
-}
+};
 
-export async function upsertTableAction(formData: FormData) {
+export const upsertTableAction = async (formData: FormData) => {
   const id = parseOptionalId(formData.get("table_id"));
   const table_number = String(formData.get("table_number") ?? "").trim();
   const status = String(formData.get("status") ?? "Available").trim();
@@ -88,9 +92,9 @@ export async function upsertTableAction(formData: FormData) {
   }
   k.upsertTable(id, table_number, status);
   revalidateAll();
-}
+};
 
-export async function deleteTableAction(formData: FormData) {
+export const deleteTableAction = async (formData: FormData) => {
   const id = Number(formData.get("table_id"));
   if (!Number.isFinite(id)) return;
   if (!k.canDeleteTable(id)) {
@@ -98,46 +102,50 @@ export async function deleteTableAction(formData: FormData) {
   }
   k.deleteTable(id);
   revalidateAll();
-}
+};
 
-export async function updateTableStatusAction(formData: FormData) {
+export const updateTableStatusAction = async (formData: FormData) => {
   const id = Number(formData.get("table_id"));
   const status = String(formData.get("status") ?? "").trim();
   if (!Number.isFinite(id)) return;
-  if (!TABLE_STATUSES.includes(status as (typeof TABLE_STATUSES)[number])) return;
+  if (!TABLE_STATUSES.includes(status as (typeof TABLE_STATUSES)[number]))
+    return;
   const db = k.getDb();
-  db.prepare('UPDATE "Table" SET status = ? WHERE table_id = ?').run(status, id);
+  db.prepare('UPDATE "Table" SET status = ? WHERE table_id = ?').run(
+    status,
+    id,
+  );
   if (status === "Occupied") {
     k.regenerateTableQrToken(id);
   }
   revalidateAll();
   redirect("/tables");
-}
+};
 
-export async function regenerateTableQrAction(formData: FormData) {
+export const regenerateTableQrAction = async (formData: FormData) => {
   const id = Number(formData.get("table_id"));
   if (!Number.isFinite(id)) return;
   k.regenerateTableQrToken(id);
   revalidateAll();
-}
+};
 
-export async function upsertChefAction(formData: FormData) {
+export const upsertChefAction = async (formData: FormData) => {
   const id = parseOptionalId(formData.get("chef_id"));
   const name = String(formData.get("name") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
   if (!name || !phone) return;
   k.upsertChef(id, name, phone);
   revalidateAll();
-}
+};
 
-export async function deleteChefAction(formData: FormData) {
+export const deleteChefAction = async (formData: FormData) => {
   const id = Number(formData.get("chef_id"));
   if (!Number.isFinite(id)) return;
   k.deleteChef(id);
   revalidateAll();
-}
+};
 
-export async function upsertMenuItemAction(formData: FormData) {
+export const upsertMenuItemAction = async (formData: FormData) => {
   const id = parseOptionalId(formData.get("menu_id"));
   const item_name = String(formData.get("item_name") ?? "").trim();
   const price = parsePrice(formData.get("price"));
@@ -147,9 +155,9 @@ export async function upsertMenuItemAction(formData: FormData) {
   if (!item_name || price == null) return;
   k.upsertMenuItem(id, item_name, price, is_available, image_url);
   revalidateAll();
-}
+};
 
-export async function deleteMenuItemAction(formData: FormData) {
+export const deleteMenuItemAction = async (formData: FormData) => {
   const id = Number(formData.get("menu_id"));
   if (!Number.isFinite(id)) return;
   if (!k.canDeleteMenuItem(id)) {
@@ -157,35 +165,38 @@ export async function deleteMenuItemAction(formData: FormData) {
   }
   k.deleteMenuItem(id);
   revalidateAll();
-}
+};
 
-export async function updateOrderStatusAction(formData: FormData) {
+export const updateOrderStatusAction = async (formData: FormData) => {
   const orderId = Number(formData.get("order_id"));
   const status = String(formData.get("order_status") ?? "");
   if (!Number.isFinite(orderId) || !status) return;
-  if (!ORDER_STATUSES.includes(status as (typeof ORDER_STATUSES)[number])) return;
+  if (!ORDER_STATUSES.includes(status as (typeof ORDER_STATUSES)[number]))
+    return;
   k.updateOrderStatus(orderId, status);
   revalidateAll();
-}
+};
 
-export async function updateQueueAction(formData: FormData) {
+export const updateQueueAction = async (formData: FormData) => {
   const queueId = Number(formData.get("queue_id"));
   const chefRaw = formData.get("chef_id");
-  const chefId =
-    chefRaw === "" || chefRaw === null ? null : Number(chefRaw);
+  const chefId = chefRaw === "" || chefRaw === null ? null : Number(chefRaw);
   const status = String(formData.get("queue_status") ?? "");
   if (!Number.isFinite(queueId) || !status) return;
   if (chefId !== null && !Number.isFinite(chefId)) return;
-  if (!QUEUE_STATUSES.includes(status as (typeof QUEUE_STATUSES)[number])) return;
+  if (!QUEUE_STATUSES.includes(status as (typeof QUEUE_STATUSES)[number]))
+    return;
   k.updateQueue(queueId, chefId, status);
   revalidateAll();
-}
+};
 
 type CreateOrderResult =
   | { ok: true; orderId: number }
   | { ok: false; message: string };
 
-export async function createOrderAction(formData: FormData): Promise<CreateOrderResult> {
+export const createOrderAction = async (
+  formData: FormData,
+): Promise<CreateOrderResult> => {
   const tableId = Number(formData.get("table_id"));
   const linesRaw = String(formData.get("lines") ?? "[]");
   if (!Number.isFinite(tableId)) {
@@ -202,12 +213,12 @@ export async function createOrderAction(formData: FormData): Promise<CreateOrder
       e instanceof Error ? e.message : "Could not create the order.";
     return { ok: false, message };
   }
-}
+};
 
 /** Self-order from guest phone: validates QR token server-side. */
-export async function createGuestOrderByQrAction(
-  formData: FormData
-): Promise<CreateOrderResult> {
+export const createGuestOrderByQrAction = async (
+  formData: FormData,
+): Promise<CreateOrderResult> => {
   const token = String(formData.get("qr_token") ?? "").trim();
   const linesRaw = String(formData.get("lines") ?? "[]");
   const table = k.getTableByQrToken(token);
@@ -230,21 +241,21 @@ export async function createGuestOrderByQrAction(
       e instanceof Error ? e.message : "Could not create the order.";
     return { ok: false, message };
   }
-}
+};
 
-export async function advanceQueueStatusAction(formData: FormData) {
+export const advanceQueueStatusAction = async (formData: FormData) => {
   const queueId = Number(formData.get("queue_id"));
   if (!Number.isFinite(queueId)) return;
   k.advanceQueueStatus(queueId);
   revalidateAll();
-}
+};
 
-export async function seedIfEmptyAction() {
+export const seedIfEmptyAction = async () => {
   k.seedDemoData();
   revalidateAll();
-}
+};
 
-export async function resetAndSeedAction() {
+export const resetAndSeedAction = async () => {
   k.seedRealisticDataset(true);
   revalidateAll();
-}
+};

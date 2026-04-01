@@ -14,7 +14,7 @@ const globalForWs = globalThis as unknown as {
   __kitchenWsReady?: boolean;
 };
 
-function getOrCreateWss(): WebSocketServer {
+const getOrCreateWss = (): WebSocketServer => {
   if (globalForWs.__kitchenWss) return globalForWs.__kitchenWss;
 
   const wss = new WebSocketServer({ port: WS_PORT });
@@ -22,12 +22,16 @@ function getOrCreateWss(): WebSocketServer {
   globalForWs.__kitchenWsReady = true;
 
   wss.on("listening", () => {
-    console.log(`[ws] Kitchen WebSocket server listening on ws://localhost:${WS_PORT}`);
+    console.log(
+      `[ws] Kitchen WebSocket server listening on ws://localhost:${WS_PORT}`,
+    );
   });
 
   wss.on("error", (err: NodeJS.ErrnoException) => {
     if (err.code === "EADDRINUSE") {
-      console.log(`[ws] Port ${WS_PORT} already in use — reusing existing WS server`);
+      console.log(
+        `[ws] Port ${WS_PORT} already in use — reusing existing WS server`,
+      );
       globalForWs.__kitchenWsReady = true;
     } else {
       console.error("[ws] WebSocket server error:", err);
@@ -48,10 +52,10 @@ function getOrCreateWss(): WebSocketServer {
   });
 
   return wss;
-}
+};
 
 /** Broadcast current kitchen state to every connected client. */
-export function broadcastKitchenState() {
+export const broadcastKitchenState = () => {
   const wss = getOrCreateWss();
   let payload: string;
   try {
@@ -69,9 +73,9 @@ export function broadcastKitchenState() {
       client.send(payload);
     }
   }
-}
+};
 
 /** Ensure WS server is started (call from server actions / API routes). */
-export function ensureWsServer() {
+export const ensureWsServer = () => {
   getOrCreateWss();
-}
+};

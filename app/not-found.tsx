@@ -1,11 +1,12 @@
 import Link from "next/link";
 
-export default function NotFound() {
+const NotFound = () => {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-zinc-50 px-4 text-center">
       <h1 className="text-2xl font-semibold text-zinc-900">Page not found</h1>
       <p className="max-w-md text-sm text-zinc-600">
-        That URL is not part of Kitchen OS. Use the sidebar or go back to the dashboard.
+        That URL is not part of Kitchen OS. Use the sidebar or go back to the
+        dashboard.
       </p>
       <Link
         href="/"
@@ -15,4 +16,6 @@ export default function NotFound() {
       </Link>
     </div>
   );
-}
+};
+
+export default NotFound;

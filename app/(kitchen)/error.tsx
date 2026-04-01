@@ -2,20 +2,22 @@
 
 import { useEffect } from "react";
 
-export default function KitchenError({
+const KitchenError = ({
   error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
-}) {
+}) => {
   useEffect(() => {
     console.error(error);
   }, [error]);
 
   return (
     <div className="mx-auto flex max-w-lg flex-col items-center gap-4 rounded-2xl border border-red-200 bg-red-50/80 px-6 py-10 text-center">
-      <h2 className="text-lg font-semibold text-zinc-900">This page failed to load</h2>
+      <h2 className="text-lg font-semibold text-zinc-900">
+        This page failed to load
+      </h2>
       <p className="text-sm text-zinc-600">
         {error.message || "Something went wrong. You can try again."}
       </p>
@@ -28,4 +30,6 @@ export default function KitchenError({
       </button>
     </div>
   );
-}
+};
+
+export default KitchenError;

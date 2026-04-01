@@ -44,12 +44,15 @@ export const DISPLAY_COLUMNS: {
     title: "Served",
     headerClass:
       "bg-gradient-to-br from-slate-200 via-slate-100 to-slate-200/90 text-slate-800 shadow-[inset_0_1px_0_rgb(255_255_255_/_0.7)]",
-    cardClass: "border-slate-200/90 bg-gradient-to-br from-white to-slate-50/80 shadow-sm",
+    cardClass:
+      "border-slate-200/90 bg-gradient-to-br from-white to-slate-50/80 shadow-sm",
     actionBtnClass: "",
   },
 ];
 
-export function groupQueueRowsByStatus(rows: QueueRow[]): Map<string, QueueRow[]> {
+export const groupQueueRowsByStatus = (
+  rows: QueueRow[],
+): Map<string, QueueRow[]> => {
   const map = new Map<string, QueueRow[]>();
   for (const col of DISPLAY_COLUMNS) {
     map.set(col.status, []);
@@ -66,4 +69,4 @@ export function groupQueueRowsByStatus(rows: QueueRow[]): Map<string, QueueRow[]
     list.sort((a, b) => a.queueNumber - b.queueNumber);
   }
   return map;
-}
+};

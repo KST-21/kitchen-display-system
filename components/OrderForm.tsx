@@ -7,13 +7,13 @@ import { useState, useTransition } from "react";
 
 type Line = { menuId: number; quantity: number; specialRequest: string };
 
-export function OrderForm({
+export const OrderForm = ({
   tables,
   menu,
 }: {
   tables: RestaurantTable[];
   menu: MenuItem[];
-}) {
+}) => {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [orderError, setOrderError] = useState<string | null>(null);
@@ -24,7 +24,7 @@ export function OrderForm({
   const [qty, setQty] = useState("1");
   const [note, setNote] = useState("");
 
-  function onSubmit(e: React.FormEvent) {
+  const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!lines.length) return;
     const fd = new FormData();
@@ -40,9 +40,9 @@ export function OrderForm({
         setOrderError(result.message);
       }
     });
-  }
+  };
 
-  function addLine() {
+  const addLine = () => {
     const menuId = Number(pick);
     const q = Math.max(1, parseInt(qty, 10) || 1);
     if (!Number.isFinite(menuId)) return;
@@ -54,7 +54,9 @@ export function OrderForm({
       }
       const next = [...prev];
       const cur = next[i]!;
-      const mergedNote = [cur.specialRequest, noteTrim].filter(Boolean).join(" · ");
+      const mergedNote = [cur.specialRequest, noteTrim]
+        .filter(Boolean)
+        .join(" · ");
       next[i] = {
         ...cur,
         quantity: cur.quantity + q,
@@ -64,11 +66,11 @@ export function OrderForm({
     });
     setNote("");
     setQty("1");
-  }
+  };
 
-  function removeAt(i: number) {
+  const removeAt = (i: number) => {
     setLines((prev) => prev.filter((_, j) => j !== i));
-  }
+  };
 
   const nameOf = (id: number) =>
     menu.find((m) => m.menu_id === id)?.item_name ?? `#${id}`;
@@ -76,7 +78,8 @@ export function OrderForm({
   if (!tables.length || !available.length) {
     return (
       <p className="text-sm text-amber-800">
-        Add at least one table and one available menu item first (Tables and Menu).
+        Add at least one table and one available menu item first (Tables and
+        Menu).
       </p>
     );
   }
@@ -89,7 +92,8 @@ export function OrderForm({
     >
       <h3 className="text-sm font-medium text-slate-900">New order (staff)</h3>
       <p className="mt-1 text-xs text-slate-500">
-        Guests usually order from the QR on the Tables page; use this for walk-ups or fixes.
+        Guests usually order from the QR on the Tables page; use this for
+        walk-ups or fixes.
       </p>
       {orderError ? (
         <p
@@ -180,7 +184,9 @@ export function OrderForm({
           ))}
         </ul>
       ) : (
-        <p className="mt-4 text-sm text-slate-500">Cart is empty — add lines above.</p>
+        <p className="mt-4 text-sm text-slate-500">
+          Cart is empty — add lines above.
+        </p>
       )}
 
       <button
@@ -192,4 +198,4 @@ export function OrderForm({
       </button>
     </form>
   );
-}
+};

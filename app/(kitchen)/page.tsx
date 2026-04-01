@@ -3,7 +3,7 @@ import { ResetDatabaseButton } from "@/components/ResetDatabaseButton";
 import { dashboardCounts } from "@/lib/kitchen-db";
 import { seedIfEmptyAction } from "../actions";
 
-export default function DashboardPage() {
+const DashboardPage = () => {
   const s = dashboardCounts();
   const cards = [
     { label: "Tables", value: s.tables.c },
@@ -15,7 +15,9 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <h2 className="text-2xl font-semibold tracking-tight text-slate-900">Dashboard</h2>
+      <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+        Dashboard
+      </h2>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((c) => (
@@ -36,7 +38,8 @@ export default function DashboardPage() {
       <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h3 className="text-sm font-semibold text-slate-900">Kitchen queue</h3>
         <p className="mt-1 text-sm text-slate-600">
-          Manage assignments on the queue page, or open the large pass display on a second screen.
+          Manage assignments on the queue page, or open the large pass display
+          on a second screen.
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Link
@@ -66,8 +69,11 @@ export default function DashboardPage() {
         <ResetDatabaseButton />
       </div>
       <p className="mt-4 text-xs text-slate-500">
-        Destructive reset clears all current data, then loads tables, chefs, menu, orders, and queue.
+        Destructive reset clears all current data, then loads tables, chefs,
+        menu, orders, and queue.
       </p>
     </div>
   );
-}
+};
+
+export default DashboardPage;

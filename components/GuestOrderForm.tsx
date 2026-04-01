@@ -7,7 +7,7 @@ import { useCallback, useMemo, useState, useTransition } from "react";
 
 type Line = { menuId: number; quantity: number; specialRequest: string };
 
-function MenuTileImage({ src, alt }: { src: string | null; alt: string }) {
+const MenuTileImage = ({ src, alt }: { src: string | null; alt: string }) => {
   const [broken, setBroken] = useState(false);
   if (!src || broken) {
     return (
@@ -30,9 +30,9 @@ function MenuTileImage({ src, alt }: { src: string | null; alt: string }) {
       onError={() => setBroken(true)}
     />
   );
-}
+};
 
-export function GuestOrderForm({
+export const GuestOrderForm = ({
   qrToken,
   menu,
   tableNumber,
@@ -40,7 +40,7 @@ export function GuestOrderForm({
   qrToken: string;
   menu: MenuItem[];
   tableNumber: string;
-}) {
+}) => {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [orderError, setOrderError] = useState<string | null>(null);
@@ -53,7 +53,7 @@ export function GuestOrderForm({
 
   const selected = useMemo(
     () => available.find((m) => String(m.menu_id) === pick) ?? available[0],
-    [available, pick]
+    [available, pick],
   );
 
   const onSubmit = useCallback(
@@ -75,7 +75,7 @@ export function GuestOrderForm({
         }
       });
     },
-    [lines, qrToken, router]
+    [lines, qrToken, router],
   );
 
   const addLine = useCallback(() => {
@@ -90,7 +90,9 @@ export function GuestOrderForm({
       }
       const next = [...prev];
       const cur = next[i]!;
-      const mergedNote = [cur.specialRequest, noteTrim].filter(Boolean).join(" · ");
+      const mergedNote = [cur.specialRequest, noteTrim]
+        .filter(Boolean)
+        .join(" · ");
       next[i] = {
         ...cur,
         quantity: cur.quantity + q,
@@ -108,7 +110,7 @@ export function GuestOrderForm({
 
   const itemById = useCallback(
     (id: number) => menu.find((m) => m.menu_id === id),
-    [menu]
+    [menu],
   );
 
   const nameOf = (id: number) => itemById(id)?.item_name ?? `#${id}`;
@@ -132,7 +134,8 @@ export function GuestOrderForm({
           className="border-b border-emerald-100 bg-gradient-to-r from-emerald-50 to-teal-50 px-4 py-3 text-center text-sm font-medium text-emerald-900"
           role="status"
         >
-          Order sent for table {tableNumber}. Thank you — the kitchen has your ticket.
+          Order sent for table {tableNumber}. Thank you — the kitchen has your
+          ticket.
         </p>
       ) : null}
       {orderError ? (
@@ -145,8 +148,12 @@ export function GuestOrderForm({
       ) : null}
 
       <div className="p-4 sm:p-5">
-        <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500">Menu</h2>
-        <p className="mt-0.5 text-xs text-slate-500">Tap an item to select, then add to your order.</p>
+        <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500">
+          Menu
+        </h2>
+        <p className="mt-0.5 text-xs text-slate-500">
+          Tap an item to select, then add to your order.
+        </p>
 
         <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4">
           {available.map((m) => {
@@ -195,10 +202,15 @@ export function GuestOrderForm({
           <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-inner">
             <div className="flex gap-3">
               <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-white shadow-sm">
-                <MenuTileImage src={selected.image_url} alt={selected.item_name} />
+                <MenuTileImage
+                  src={selected.image_url}
+                  alt={selected.item_name}
+                />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-semibold leading-snug text-slate-900">{selected.item_name}</p>
+                <p className="font-semibold leading-snug text-slate-900">
+                  {selected.item_name}
+                </p>
                 <p className="mt-0.5 text-sm font-bold tabular-nums text-amber-700">
                   ${selected.price.toFixed(2)} each
                 </p>
@@ -216,7 +228,8 @@ export function GuestOrderForm({
                 />
               </label>
               <label className="flex min-w-[8rem] flex-1 flex-col gap-1 text-xs font-semibold text-slate-600">
-                Note <span className="font-normal text-slate-400">(optional)</span>
+                Note{" "}
+                <span className="font-normal text-slate-400">(optional)</span>
                 <input
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
@@ -252,10 +265,14 @@ export function GuestOrderForm({
                   <div className="min-w-0 flex-1 text-sm">
                     <p className="font-semibold text-slate-900">
                       {nameOf(ln.menuId)}{" "}
-                      <span className="font-bold tabular-nums text-amber-800">×{ln.quantity}</span>
+                      <span className="font-bold tabular-nums text-amber-800">
+                        ×{ln.quantity}
+                      </span>
                     </p>
                     {ln.specialRequest ? (
-                      <p className="mt-0.5 text-xs text-slate-600">{ln.specialRequest}</p>
+                      <p className="mt-0.5 text-xs text-slate-600">
+                        {ln.specialRequest}
+                      </p>
                     ) : null}
                   </div>
                   <button
@@ -270,7 +287,9 @@ export function GuestOrderForm({
             })}
           </ul>
         ) : (
-          <p className="text-center text-sm text-slate-500">Your order is empty — pick something tasty above.</p>
+          <p className="text-center text-sm text-slate-500">
+            Your order is empty — pick something tasty above.
+          </p>
         )}
 
         <button
@@ -283,4 +302,4 @@ export function GuestOrderForm({
       </div>
     </form>
   );
-}
+};

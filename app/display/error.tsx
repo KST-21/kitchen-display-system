@@ -3,20 +3,22 @@
 import Link from "next/link";
 import { useEffect } from "react";
 
-export default function DisplayError({
+const DisplayError = ({
   error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
-}) {
+}) => {
   useEffect(() => {
     console.error(error);
   }, [error]);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-100 px-6 text-center">
-      <h2 className="text-lg font-semibold text-slate-900">Queue display error</h2>
+      <h2 className="text-lg font-semibold text-slate-900">
+        Queue display error
+      </h2>
       <p className="max-w-md text-sm text-slate-600">
         {error.message || "Could not load the kitchen queue."}
       </p>
@@ -37,4 +39,6 @@ export default function DisplayError({
       </div>
     </div>
   );
-}
+};
+
+export default DisplayError;

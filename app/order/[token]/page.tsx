@@ -4,11 +4,11 @@ import { getTableByQrToken, listMenuItems } from "@/lib/kitchen-db";
 
 export const dynamic = "force-dynamic";
 
-export default async function GuestOrderPage({
+const GuestOrderPage = async ({
   params,
 }: {
   params: Promise<{ token: string }>;
-}) {
+}) => {
   const { token } = await params;
   const table = getTableByQrToken(token);
   if (!table) notFound();
@@ -34,13 +34,20 @@ export default async function GuestOrderPage({
             Table {table.table_number}
           </h1>
           <p className="relative mx-auto mt-3 max-w-sm text-sm leading-relaxed text-slate-600">
-            Browse the menu with photos, add notes, and send your order straight to the kitchen.
+            Browse the menu with photos, add notes, and send your order straight
+            to the kitchen.
           </p>
         </header>
         <div className="mt-8">
-          <GuestOrderForm qrToken={table.qr_token} menu={menu} tableNumber={table.table_number} />
+          <GuestOrderForm
+            qrToken={table.qr_token}
+            menu={menu}
+            tableNumber={table.table_number}
+          />
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default GuestOrderPage;
