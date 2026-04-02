@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +16,8 @@ const links = [
 ];
 
 const KitchenLayout = ({ children }: { children: React.ReactNode }) => {
+  const pathname = usePathname();
+
   return (
     <div className="flex min-h-screen bg-slate-100 text-slate-900">
       <aside className="fixed h-screen flex w-56 shrink-0 flex-col border-r border-slate-200 bg-white shadow-sm">
@@ -32,7 +37,11 @@ const KitchenLayout = ({ children }: { children: React.ReactNode }) => {
             <Link
               key={item.href}
               href={item.href}
-              className="rounded-lg px-3 py-2.5 text-sm text-slate-700 transition hover:bg-amber-50 hover:text-slate-900"
+              className={`rounded-lg px-3 py-2.5 text-sm text-slate-700 transition ${
+                pathname === item.href
+                  ? "bg-slate-900 text-white font-medium"
+                  : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+              }`}
             >
               {item.label}
             </Link>
