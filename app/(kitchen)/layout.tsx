@@ -15,7 +15,7 @@ const links = [
 const KitchenLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="flex min-h-screen bg-slate-100 text-slate-900">
-      <aside className="flex w-56 shrink-0 flex-col border-r border-slate-200 bg-white shadow-sm">
+      <aside className="fixed h-screen flex w-56 shrink-0 flex-col border-r border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-5 py-6">
           <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-600">
             Operations
@@ -39,7 +39,7 @@ const KitchenLayout = ({ children }: { children: React.ReactNode }) => {
           ))}
         </nav>
       </aside>
-      <main className="min-w-0 flex-1 overflow-auto p-8">{children}</main>
+      <main className="ml-56 min-w-0 flex-1 overflow-auto p-8">{children}</main>
     </div>
   );
 };
