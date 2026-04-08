@@ -1,17 +1,17 @@
 import {
   deleteTableAction,
-  regenerateTableQrAction,
   updateTableStatusAction,
   upsertTableAction,
 } from "@/app/actions";
-import { getPublicBaseUrl } from "@/lib/public-url";
 import { listTablesWithDeleteFlag, tableStatusCounts } from "@/lib/kitchen-db";
-import { TableQrImage } from "@/components/TableQrImage";
-import { SortHeader } from "@/components/SortHeader";
 import { parseSortParams, sortRows } from "@/lib/sort-rows";
 import Link from "next/link";
+import { StatusSelect } from "@/components/StatusSelect";
+import { TableCardMenu } from "@/components/TableCardMenu";
 
 const STATUSES = ["Available", "Occupied", "Reserved", "Cleaning"] as const;
+
+type Status = (typeof STATUSES)[number];
 
 type SP = {
   add?: string;
@@ -21,9 +21,30 @@ type SP = {
   dir?: string;
 };
 
+const statusStyles = {
+  Total: {
+    card: "bg-slate-100 text-slate-800",
+  },
+  Available: {
+    dot: "bg-emerald-500",
+    card: "bg-emerald-50 text-emerald-800",
+  },
+  Occupied: {
+    dot: "bg-amber-500",
+    card: "bg-amber-50 text-amber-800",
+  },
+  Reserved: {
+    dot: "bg-sky-500",
+    card: "bg-sky-50 text-sky-800",
+  },
+  Cleaning: {
+    dot: "bg-slate-400",
+    card: "bg-slate-50 text-slate-600",
+  },
+} as const;
+
 const TablesPage = async ({ searchParams }: { searchParams: Promise<SP> }) => {
   const sp = await searchParams;
-  const base = await getPublicBaseUrl();
   const showAdd = sp.add === "1";
   const editId = sp.edit ? Number(sp.edit) : null;
   const allRows = listTablesWithDeleteFlag();
@@ -36,16 +57,6 @@ const TablesPage = async ({ searchParams }: { searchParams: Promise<SP> }) => {
     table_number: (r) => r.table_number,
     status: (r) => r.status,
   });
-
-  const sh = (col: string, label: string) => (
-    <SortHeader
-      basePath="/tables"
-      column={col}
-      label={label}
-      currentSort={sort}
-      currentDir={dir}
-    />
-  );
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -71,27 +82,27 @@ const TablesPage = async ({ searchParams }: { searchParams: Promise<SP> }) => {
           {
             label: "Total",
             value: total,
-            color: "bg-slate-100 text-slate-800",
+            color: statusStyles.Total.card,
           },
           {
             label: "Available",
             value: statusMap["Available"] ?? 0,
-            color: "bg-emerald-50 text-emerald-800",
+            color: statusStyles.Available.card,
           },
           {
             label: "Occupied",
             value: statusMap["Occupied"] ?? 0,
-            color: "bg-amber-50 text-amber-800",
+            color: statusStyles.Occupied.card,
           },
           {
             label: "Reserved",
             value: statusMap["Reserved"] ?? 0,
-            color: "bg-sky-50 text-sky-800",
+            color: statusStyles.Reserved.card,
           },
           {
             label: "Cleaning",
             value: statusMap["Cleaning"] ?? 0,
-            color: "bg-slate-50 text-slate-600",
+            color: statusStyles.Cleaning.card,
           },
         ].map((c) => (
           <div
@@ -167,128 +178,51 @@ const TablesPage = async ({ searchParams }: { searchParams: Promise<SP> }) => {
         </div>
       )}
 
-      <div className="mt-8 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <table className="w-full min-w-[820px] text-left text-sm">
-          <caption className="sr-only">
-            Tables, status, QR codes, and actions
-          </caption>
-          <thead className="border-b border-slate-200 bg-slate-50 text-xs font-medium uppercase tracking-wide text-slate-500">
-            <tr>
-              {sh("table_id", "ID")}
-              {sh("table_number", "Table")}
-              {sh("status", "Status")}
-              <th className="px-3 py-3">Guest order QR</th>
-              <th className="px-3 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {rows.map((r) => {
-              const orderUrl = `${base}/order/${encodeURIComponent(r.qr_token)}`;
-              return (
-                <tr key={r.table_id} className="align-top hover:bg-slate-50/80">
-                  <td className="px-3 py-4 tabular-nums text-slate-500">
-                    {r.table_id}
-                  </td>
-                  <td className="px-3 py-4 font-semibold text-slate-900">
-                    {r.table_number}
-                  </td>
-                  <td className="px-3 py-4">
-                    <form
-                      action={updateTableStatusAction}
-                      className="flex items-center gap-2"
-                    >
-                      <input type="hidden" name="table_id" value={r.table_id} />
-                      <select
-                        name="status"
-                        defaultValue={r.status}
-                        className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs"
-                      >
-                        {STATUSES.map((s) => (
-                          <option key={s} value={s}>
-                            {s}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        type="submit"
-                        className="rounded-lg bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-slate-700"
-                      >
-                        Set
-                      </button>
-                    </form>
-                  </td>
-                  <td className="px-3 py-4">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
-                      <TableQrImage
-                        url={orderUrl}
-                        label={`Order at table ${r.table_number}`}
-                      />
-                      <a
-                        href={orderUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-1 inline-block rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-800 ring-1 ring-amber-200 hover:bg-amber-100"
-                      >
-                        Open Table {r.table_number} order page
-                      </a>
-                    </div>
-                  </td>
-                  <td className="px-3 py-4 text-right text-sm">
-                    <div className="flex flex-col items-end gap-1.5">
-                      <Link
-                        href={`/print/table/${r.table_id}`}
-                        target="_blank"
-                        className="font-medium text-slate-900 hover:underline"
-                        title="Open printable QR slip for this table"
-                      >
-                        Print QR
-                      </Link>
-                      <Link
-                        href={`/tables?edit=${r.table_id}`}
-                        className="text-amber-700 hover:underline"
-                      >
-                        Edit
-                      </Link>
-                      <form action={regenerateTableQrAction} className="inline">
-                        <input
-                          type="hidden"
-                          name="table_id"
-                          value={r.table_id}
-                        />
-                        <button
-                          type="submit"
-                          className="text-slate-600 hover:underline"
-                          title="Invalidates old printed QR codes"
-                        >
-                          New QR
-                        </button>
-                      </form>
-                      <form action={deleteTableAction} className="inline">
-                        <input
-                          type="hidden"
-                          name="table_id"
-                          value={r.table_id}
-                        />
-                        <button
-                          type="submit"
-                          disabled={!r.can_delete}
-                          className="text-red-600 hover:underline disabled:cursor-not-allowed disabled:opacity-40"
-                          title={
-                            r.can_delete
-                              ? "Delete table"
-                              : "Has orders — cannot delete"
-                          }
-                        >
-                          Delete
-                        </button>
-                      </form>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {rows.map((r) => (
+          <div
+            key={r.table_id}
+            className="rounded-2xl border p-4 shadow-md flex flex-col gap-3 bg-white"
+          >
+            <div className="relative flex items-center justify-center">
+              <h3 className="font-semibold text-slate-900">
+                Table {r.table_number}
+              </h3>
+
+              <div className="absolute right-0">
+                <TableCardMenu
+                  tableId={r.table_id}
+                  canDelete={r.can_delete}
+                  onDelete={deleteTableAction}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
+                <span
+                  className={`h-2.5 w-2.5 rounded-full ${statusStyles[r.status as Status].dot}`}
+                />
+                {r.status}
+              </div>
+
+              <StatusSelect
+                tableId={r.table_id}
+                currentStatus={r.status}
+                action={updateTableStatusAction}
+                statuses={STATUSES}
+              />
+            </div>
+
+            <Link
+              href={`/print/table/${r.table_id}`}
+              target="_blank"
+              className="mt-2 w-full rounded-xl bg-slate-900 px-4 py-2 text-center text-sm font-medium text-white hover:bg-slate-800"
+            >
+              Print QR
+            </Link>
+          </div>
+        ))}
       </div>
     </div>
   );
