@@ -119,7 +119,6 @@ export const updateTableStatusAction = async (formData: FormData) => {
     k.regenerateTableQrToken(id);
   }
   revalidateAll();
-  redirect("/tables");
 };
 
 export const regenerateTableQrAction = async (formData: FormData) => {
