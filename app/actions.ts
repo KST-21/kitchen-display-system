@@ -90,7 +90,7 @@ export const upsertTableAction = async (formData: FormData) => {
   if (!TABLE_STATUSES.includes(status as (typeof TABLE_STATUSES)[number])) {
     return;
   }
-  k.upsertTable(id, table_number, status);
+  await k.upsertTable(id, table_number, status);
   revalidateAll();
 };
 
@@ -100,7 +100,7 @@ export const deleteTableAction = async (formData: FormData) => {
   if (!k.canDeleteTable(id)) {
     redirect("/tables?error=has_orders");
   }
-  k.deleteTable(id);
+  await k.deleteTable(id);
   revalidateAll();
 };
 
@@ -110,13 +110,9 @@ export const updateTableStatusAction = async (formData: FormData) => {
   if (!Number.isFinite(id)) return;
   if (!TABLE_STATUSES.includes(status as (typeof TABLE_STATUSES)[number]))
     return;
-  const db = k.getDb();
-  db.prepare('UPDATE "Table" SET status = ? WHERE table_id = ?').run(
-    status,
-    id,
-  );
+  await k.updateTableStatus(id, status);
   if (status === "Occupied") {
-    k.regenerateTableQrToken(id);
+    await k.regenerateTableQrToken(id);
   }
   revalidateAll();
 };
@@ -124,7 +120,7 @@ export const updateTableStatusAction = async (formData: FormData) => {
 export const regenerateTableQrAction = async (formData: FormData) => {
   const id = Number(formData.get("table_id"));
   if (!Number.isFinite(id)) return;
-  k.regenerateTableQrToken(id);
+  await k.regenerateTableQrToken(id);
   revalidateAll();
 };
 
@@ -133,14 +129,14 @@ export const upsertChefAction = async (formData: FormData) => {
   const name = String(formData.get("name") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
   if (!name || !phone) return;
-  k.upsertChef(id, name, phone);
+  await k.upsertChef(id, name, phone);
   revalidateAll();
 };
 
 export const deleteChefAction = async (formData: FormData) => {
   const id = Number(formData.get("chef_id"));
   if (!Number.isFinite(id)) return;
-  k.deleteChef(id);
+  await k.deleteChef(id);
   revalidateAll();
 };
 
@@ -152,7 +148,7 @@ export const upsertMenuItemAction = async (formData: FormData) => {
   const image_url_raw = String(formData.get("image_url") ?? "").trim();
   const image_url = image_url_raw || null;
   if (!item_name || price == null) return;
-  k.upsertMenuItem(id, item_name, price, is_available, image_url);
+  await k.upsertMenuItem(id, item_name, price, is_available, image_url);
   revalidateAll();
 };
 
@@ -162,7 +158,7 @@ export const deleteMenuItemAction = async (formData: FormData) => {
   if (!k.canDeleteMenuItem(id)) {
     redirect("/menu?error=in_use");
   }
-  k.deleteMenuItem(id);
+  await k.deleteMenuItem(id);
   revalidateAll();
 };
 
@@ -172,7 +168,7 @@ export const updateOrderStatusAction = async (formData: FormData) => {
   if (!Number.isFinite(orderId) || !status) return;
   if (!ORDER_STATUSES.includes(status as (typeof ORDER_STATUSES)[number]))
     return;
-  k.updateOrderStatus(orderId, status);
+  await k.updateOrderStatus(orderId, status);
   revalidateAll();
 };
 
@@ -185,7 +181,7 @@ export const updateQueueAction = async (formData: FormData) => {
   if (chefId !== null && !Number.isFinite(chefId)) return;
   if (!QUEUE_STATUSES.includes(status as (typeof QUEUE_STATUSES)[number]))
     return;
-  k.updateQueue(queueId, chefId, status);
+  await k.updateQueue(queueId, chefId, status);
   revalidateAll();
 };
 
@@ -204,7 +200,7 @@ export const createOrderAction = async (
   const parsed = parseOrderLines(linesRaw);
   if (!parsed.ok) return { ok: false, message: parsed.message };
   try {
-    const orderId = k.createOrderWithItems(tableId, parsed.lines);
+    const orderId = await k.createOrderWithItems(tableId, parsed.lines);
     revalidateAll();
     return { ok: true, orderId };
   } catch (e) {
@@ -220,7 +216,7 @@ export const createGuestOrderByQrAction = async (
 ): Promise<CreateOrderResult> => {
   const token = String(formData.get("qr_token") ?? "").trim();
   const linesRaw = String(formData.get("lines") ?? "[]");
-  const table = k.getTableByQrToken(token);
+  const table = await k.getTableByQrToken(token);
   if (!table) {
     return {
       ok: false,
@@ -231,7 +227,7 @@ export const createGuestOrderByQrAction = async (
   const parsed = parseOrderLines(linesRaw);
   if (!parsed.ok) return { ok: false, message: parsed.message };
   try {
-    const orderId = k.createOrderWithItems(table.table_id, parsed.lines);
+    const orderId = await k.createOrderWithItems(table.table_id, parsed.lines);
     revalidateAll();
     revalidatePath(`/order/${token}`);
     return { ok: true, orderId };
@@ -245,16 +241,6 @@ export const createGuestOrderByQrAction = async (
 export const advanceQueueStatusAction = async (formData: FormData) => {
   const queueId = Number(formData.get("queue_id"));
   if (!Number.isFinite(queueId)) return;
-  k.advanceQueueStatus(queueId);
-  revalidateAll();
-};
-
-export const seedIfEmptyAction = async () => {
-  k.seedDemoData();
-  revalidateAll();
-};
-
-export const resetAndSeedAction = async () => {
-  k.seedRealisticDataset(true);
+  await k.advanceQueueStatus(queueId);
   revalidateAll();
 };

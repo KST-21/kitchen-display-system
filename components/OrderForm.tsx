@@ -1,7 +1,7 @@
 "use client";
 
 import { createOrderAction } from "@/app/actions";
-import type { MenuItem, RestaurantTable } from "@/lib/kitchen-db";
+import { MenuItem, RestaurantTable } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 

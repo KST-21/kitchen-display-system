@@ -15,11 +15,11 @@ export const POST = async (request: Request) => {
     if (!Number.isFinite(queueId)) {
       return NextResponse.json({ error: "Invalid queue_id" }, { status: 400 });
     }
-    removeServedQueueEntry(queueId);
+    await removeServedQueueEntry(queueId);
     broadcastKitchenState();
     return NextResponse.json({
-      rows: listKitchenQueue(),
-      chefs: listChefs(),
+      rows: await listKitchenQueue(),
+      chefs: await listChefs(),
     });
   } catch (e) {
     console.error(e);

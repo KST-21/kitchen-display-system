@@ -12,8 +12,8 @@ const QueuePage = async ({
   searchParams: Promise<{ sort?: string; dir?: string }>;
 }) => {
   const sp = await searchParams;
-  const allRows = listKitchenQueue();
-  const chefs = listChefs();
+  const allRows = await listKitchenQueue();
+  const chefs = await listChefs();
   const { sort, dir } = parseSortParams(sp);
   const rows = sortRows(allRows, sort, dir, {
     queueNumber: (r) => r.queueNumber,

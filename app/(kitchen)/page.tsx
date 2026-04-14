@@ -1,10 +1,8 @@
 import Link from "next/link";
-import { ResetDatabaseButton } from "@/components/ResetDatabaseButton";
 import { dashboardCounts } from "@/lib/kitchen-db";
-import { seedIfEmptyAction } from "../actions";
 
-const DashboardPage = () => {
-  const s = dashboardCounts();
+const DashboardPage = async () => {
+  const s = await dashboardCounts();
   const cards = [
     { label: "Tables", value: s.tables.c },
     { label: "Chefs", value: s.chefs.c },
@@ -56,22 +54,6 @@ const DashboardPage = () => {
           </Link>
         </div>
       </div>
-
-      <div className="mt-10 flex flex-wrap gap-3">
-        <form action={seedIfEmptyAction}>
-          <button
-            type="submit"
-            className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow hover:bg-slate-800"
-          >
-            Load full test data (if empty)
-          </button>
-        </form>
-        <ResetDatabaseButton />
-      </div>
-      <p className="mt-4 text-xs text-slate-500">
-        Destructive reset clears all current data, then loads tables, chefs,
-        menu, orders, and queue.
-      </p>
     </div>
   );
 };

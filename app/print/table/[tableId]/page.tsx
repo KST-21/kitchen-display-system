@@ -14,7 +14,7 @@ const PrintTableQrPage = async ({
 }) => {
   const { tableId: rawId } = await params;
   const id = Number(rawId);
-  const tables = listTables();
+  const tables = await listTables();
   const table = tables.find((t) => t.table_id === id);
   if (!table) notFound();
 

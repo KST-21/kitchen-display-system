@@ -8,8 +8,8 @@ export const GET = async () => {
   ensureWsServer();
   try {
     return NextResponse.json({
-      rows: listKitchenQueue(),
-      chefs: listChefs(),
+      rows: await listKitchenQueue(),
+      chefs: await listChefs(),
     });
   } catch (e) {
     console.error(e);

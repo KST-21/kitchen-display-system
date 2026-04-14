@@ -2,10 +2,10 @@ import { QueueDisplayBoard } from "@/components/QueueDisplayBoard";
 import { listChefs, listKitchenQueue } from "@/lib/kitchen-db";
 import { ensureWsServer } from "@/lib/ws-server";
 
-const QueueDisplayPage = () => {
+const QueueDisplayPage = async () => {
   ensureWsServer();
-  const initialRows = listKitchenQueue();
-  const initialChefs = listChefs();
+  const initialRows = await listKitchenQueue();
+  const initialChefs = await listChefs();
   return (
     <QueueDisplayBoard
       initialRows={initialRows}

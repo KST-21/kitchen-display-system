@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DISPLAY_COLUMNS, groupQueueRowsByStatus } from "@/lib/queue-display";
-import type { Chef, QueueRow } from "@/lib/kitchen-db";
+import { Chef, QueueRow } from "@/lib/types";
 
 const NEXT_STATUS: Record<string, string> = {
   Queued: "Preparing",

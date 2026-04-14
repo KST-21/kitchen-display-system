@@ -1,4 +1,4 @@
-import type { QueueRow } from "@/lib/kitchen-db";
+import { QueueRow } from "./types";
 
 /** Light, high-contrast column styling for kitchen displays. */
 export const DISPLAY_COLUMNS: {

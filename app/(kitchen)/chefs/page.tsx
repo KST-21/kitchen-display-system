@@ -12,7 +12,7 @@ const ChefsPage = async ({
 }) => {
   const sp = await searchParams;
   const editId = sp.edit ? Number(sp.edit) : null;
-  const allRows = listChefs();
+  const allRows = await listChefs();
   const editing = editId ? allRows.find((r) => r.chef_id === editId) : null;
   const { sort, dir } = parseSortParams(sp);
   const rows = sortRows(allRows, sort, dir, {
