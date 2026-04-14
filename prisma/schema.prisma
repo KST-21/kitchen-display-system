@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Table {
+  table_id     Int    @id @default(autoincrement())
+  table_number String @unique
+  status       String @default("Available")
+  qr_token     String @unique
+
+  orders Order[]
+}
+
+model Chef {
+  chef_id Int    @id @default(autoincrement())
+  name    String
+  phone   String
+
+  queues KitchenQueue[]
+}
+
+model Menu_Item {
+  menu_id      Int     @id @default(autoincrement())
+  item_name    String
+  price        Float
+  is_available Boolean @default(true)
+  image_url    String?
+
+  order_items Order_Item[]
+}
+
+model Order {
+  order_id     Int      @id @default(autoincrement())
+  table_id     Int
+  created_at   DateTime @default(now())
+  order_status String   @default("Pending")
+  order_number Int?
+
+  table Table         @relation(fields: [table_id], references: [table_id])
+  items Order_Item[]
+  queue KitchenQueue?
+}
+
+model Order_Item {
+  order_item_id Int @id @default(autoincrement())
+
+  order_id Int
+  menu_id  Int
+
+  quantity        Int
+  special_request String?
+
+  order Order     @relation(fields: [order_id], references: [order_id], onDelete: Cascade)
+  menu  Menu_Item @relation(fields: [menu_id], references: [menu_id])
+}
+
+model KitchenQueue {
+  queue_id Int @id @default(autoincrement())
+
+  order_id Int  @unique
+  chef_id  Int?
+
+  position   Int
+  created_at DateTime @default(now())
+  status     String   @default("Queued")
+  priority   Int      @default(0)
+
+  order Order @relation(fields: [order_id], references: [order_id], onDelete: Cascade)
+  chef  Chef? @relation(fields: [chef_id], references: [chef_id])
+}

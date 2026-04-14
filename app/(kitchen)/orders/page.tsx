@@ -9,11 +9,11 @@ import {
 
 const STATUSES = ["Pending", "In progress", "Completed", "Cancelled"] as const;
 
-const OrdersPage = () => {
-  const orders = listOrders();
-  const linesByOrder = mapOrderIdToLines();
-  const tables = listTables();
-  const menu = listMenuItems();
+const OrdersPage = async () => {
+  const orders = await listOrders();
+  const linesByOrder = await mapOrderIdToLines();
+  const tables = await listTables();
+  const menu = await listMenuItems();
 
   return (
     <div className="mx-auto max-w-5xl">

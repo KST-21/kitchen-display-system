@@ -47,9 +47,9 @@ const TablesPage = async ({ searchParams }: { searchParams: Promise<SP> }) => {
   const sp = await searchParams;
   const showAdd = sp.add === "1";
   const editId = sp.edit ? Number(sp.edit) : null;
-  const allRows = listTablesWithDeleteFlag();
+  const allRows = await listTablesWithDeleteFlag();
   const editing = editId ? allRows.find((r) => r.table_id === editId) : null;
-  const statusMap = tableStatusCounts();
+  const statusMap = await tableStatusCounts();
   const total = allRows.length;
   const { sort, dir } = parseSortParams(sp);
   const rows = sortRows(allRows, sort, dir, {

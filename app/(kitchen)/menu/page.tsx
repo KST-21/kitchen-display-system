@@ -16,7 +16,7 @@ const MenuPage = async ({
 }) => {
   const sp = await searchParams;
   const editId = sp.edit ? Number(sp.edit) : null;
-  const allRows = listMenuItemsWithDeleteFlag();
+  const allRows = await listMenuItemsWithDeleteFlag();
   const editing = editId ? allRows.find((r) => r.menu_id === editId) : null;
   const { sort, dir } = parseSortParams(sp);
   const rows = sortRows(allRows, sort, dir, {
@@ -109,7 +109,7 @@ const MenuPage = async ({
             <input
               type="checkbox"
               name="is_available"
-              defaultChecked={editing ? editing.is_available === 1 : true}
+              defaultChecked={editing ? editing.is_available : true}
               className="h-4 w-4 rounded border-slate-300"
             />
             Available

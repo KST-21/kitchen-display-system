@@ -10,10 +10,10 @@ const GuestOrderPage = async ({
   params: Promise<{ token: string }>;
 }) => {
   const { token } = await params;
-  const table = getTableByQrToken(token);
+  const table = await getTableByQrToken(token);
   if (!table) notFound();
 
-  const menu = listMenuItems();
+  const menu = await listMenuItems();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50/90 via-white to-slate-100 pb-10 pt-6 sm:pt-10">

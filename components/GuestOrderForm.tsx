@@ -1,7 +1,7 @@
 "use client";
 
 import { createGuestOrderByQrAction } from "@/app/actions";
-import type { MenuItem } from "@/lib/kitchen-db";
+import { MenuItem } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState, useTransition } from "react";
 

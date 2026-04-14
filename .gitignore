@@ -41,5 +41,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# local SQLite
-/data/
+/lib/generated/prisma
+SKILL.md
+skills-lock.json
