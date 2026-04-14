@@ -21,7 +21,7 @@ export const SortHeader = ({
   const nextDir = active && currentDir === "asc" ? "desc" : "asc";
   const params = new URLSearchParams({
     ...extraParams,
-    sort: column,
+    sortKey: column,
     dir: nextDir,
   });
   const arrow = active ? (currentDir === "asc" ? " ↑" : " ↓") : " ↕";

@@ -1,6 +1,6 @@
 import { deleteMenuItemAction, upsertMenuItemAction } from "@/app/actions";
 import { SortHeader } from "@/components/SortHeader";
-import { parseSortParams, sortRows } from "@/lib/sort-rows";
+import { parseSortParams, sort } from "@/lib/utils/sort";
 import { listMenuItemsWithDeleteFlag } from "@/lib/kitchen-db";
 import Link from "next/link";
 
@@ -10,7 +10,7 @@ const MenuPage = async ({
   searchParams: Promise<{
     edit?: string;
     error?: string;
-    sort?: string;
+    sortKey?: string;
     dir?: string;
   }>;
 }) => {
@@ -18,8 +18,8 @@ const MenuPage = async ({
   const editId = sp.edit ? Number(sp.edit) : null;
   const allRows = await listMenuItemsWithDeleteFlag();
   const editing = editId ? allRows.find((r) => r.menu_id === editId) : null;
-  const { sort, dir } = parseSortParams(sp);
-  const rows = sortRows(allRows, sort, dir, {
+  const { sortKey, dir } = parseSortParams(sp);
+  const rows = sort(allRows, sortKey, dir, {
     menu_id: (r) => r.menu_id,
     item_name: (r) => r.item_name,
     price: (r) => r.price,
@@ -31,7 +31,7 @@ const MenuPage = async ({
       basePath="/menu"
       column={col}
       label={label}
-      currentSort={sort}
+      currentSort={sortKey}
       currentDir={dir}
     />
   );

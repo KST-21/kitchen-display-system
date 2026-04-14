@@ -6,7 +6,7 @@ import {
   QueueRow,
   RestaurantTableWithDelete,
 } from "@/lib/types";
-import { sortRows } from "./sort-rows";
+import { sort } from "./utils/sort";
 
 export const newQrToken = () => crypto.randomUUID();
 
@@ -29,11 +29,9 @@ export const dashboardCounts = async () => {
 };
 
 export const listTables = async () => {
-  const tables = await prisma.table.findMany({
-    orderBy: { table_id: "asc" },
-  });
+  const tables = await prisma.table.findMany();
 
-  return sortRows(tables, "table_number", "asc", {
+  return sort(tables, "table_number", "asc", {
     table_number: (t) => {
       const n = Number(t.table_number);
       return isNaN(n) ? t.table_number : n;

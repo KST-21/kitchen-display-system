@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { updateQueueAction } from "@/app/actions";
 import { SortHeader } from "@/components/SortHeader";
-import { parseSortParams, sortRows } from "@/lib/sort-rows";
+import { parseSortParams, sort } from "@/lib/utils/sort";
 import { listChefs, listKitchenQueue } from "@/lib/kitchen-db";
 
 const QSTATUSES = ["Queued", "Preparing", "Ready", "Served"] as const;
@@ -9,13 +9,13 @@ const QSTATUSES = ["Queued", "Preparing", "Ready", "Served"] as const;
 const QueuePage = async ({
   searchParams,
 }: {
-  searchParams: Promise<{ sort?: string; dir?: string }>;
+  searchParams: Promise<{ sortKey?: string; dir?: string }>;
 }) => {
   const sp = await searchParams;
   const allRows = await listKitchenQueue();
   const chefs = await listChefs();
-  const { sort, dir } = parseSortParams(sp);
-  const rows = sortRows(allRows, sort, dir, {
+  const { sortKey, dir } = parseSortParams(sp);
+  const rows = sort(allRows, sortKey, dir, {
     queueNumber: (r) => r.queueNumber,
     order_id: (r) => r.order_id,
     table_number: (r) => r.table_number,
@@ -30,7 +30,7 @@ const QueuePage = async ({
       basePath="/queue"
       column={col}
       label={label}
-      currentSort={sort}
+      currentSort={sortKey}
       currentDir={dir}
     />
   );

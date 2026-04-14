@@ -4,7 +4,7 @@ import {
   upsertTableAction,
 } from "@/app/actions";
 import { listTablesWithDeleteFlag, tableStatusCounts } from "@/lib/kitchen-db";
-import { parseSortParams, sortRows } from "@/lib/sort-rows";
+import { parseSortParams, sort } from "@/lib/utils/sort";
 import Link from "next/link";
 import { StatusSelect } from "@/components/StatusSelect";
 import { TableCardMenu } from "@/components/TableCardMenu";
@@ -17,7 +17,7 @@ type SP = {
   add?: string;
   edit?: string;
   error?: string;
-  sort?: string;
+  sortKey?: string;
   dir?: string;
 };
 
@@ -51,8 +51,8 @@ const TablesPage = async ({ searchParams }: { searchParams: Promise<SP> }) => {
   const editing = editId ? allRows.find((r) => r.table_id === editId) : null;
   const statusMap = await tableStatusCounts();
   const total = allRows.length;
-  const { sort, dir } = parseSortParams(sp);
-  const rows = sortRows(allRows, sort, dir, {
+  const { sortKey, dir } = parseSortParams(sp);
+  const rows = sort(allRows, sortKey, dir, {
     table_id: (r) => r.table_id,
     table_number: (r) => r.table_number,
     status: (r) => r.status,
