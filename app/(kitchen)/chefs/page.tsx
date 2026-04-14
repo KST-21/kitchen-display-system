@@ -1,21 +1,21 @@
 import { upsertChefAction } from "@/app/actions";
 import { ChefDeleteForm } from "@/components/ChefDeleteForm";
 import { SortHeader } from "@/components/SortHeader";
-import { parseSortParams, sortRows } from "@/lib/sort-rows";
+import { parseSortParams, sort } from "@/lib/utils/sort";
 import { listChefs } from "@/lib/kitchen-db";
 import Link from "next/link";
 
 const ChefsPage = async ({
   searchParams,
 }: {
-  searchParams: Promise<{ edit?: string; sort?: string; dir?: string }>;
+  searchParams: Promise<{ edit?: string; sortKey?: string; dir?: string }>;
 }) => {
   const sp = await searchParams;
   const editId = sp.edit ? Number(sp.edit) : null;
   const allRows = await listChefs();
   const editing = editId ? allRows.find((r) => r.chef_id === editId) : null;
-  const { sort, dir } = parseSortParams(sp);
-  const rows = sortRows(allRows, sort, dir, {
+  const { sortKey, dir } = parseSortParams(sp);
+  const rows = sort(allRows, sortKey, dir, {
     chef_id: (r) => r.chef_id,
     name: (r) => r.name,
     phone: (r) => r.phone,
@@ -26,7 +26,7 @@ const ChefsPage = async ({
       basePath="/chefs"
       column={col}
       label={label}
-      currentSort={sort}
+      currentSort={sortKey}
       currentDir={dir}
     />
   );
