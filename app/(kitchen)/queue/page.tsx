@@ -3,8 +3,7 @@ import { updateQueueAction } from "@/app/actions";
 import { SortHeader } from "@/components/SortHeader";
 import { parseSortParams, sort } from "@/lib/utils/sort";
 import { listChefs, listKitchenQueue } from "@/lib/kitchen-db";
-
-const QSTATUSES = ["Queued", "Preparing", "Ready", "Served"] as const;
+import { QUEUE_STATUSES } from "@/lib/constants/status";
 
 const QueuePage = async ({
   searchParams,
@@ -127,7 +126,7 @@ const QueuePage = async ({
                       className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs"
                       aria-label={`Prep status for ticket ${r.queueNumber}`}
                     >
-                      {QSTATUSES.map((s) => (
+                      {QUEUE_STATUSES.map((s) => (
                         <option key={s} value={s}>
                           {s}
                         </option>

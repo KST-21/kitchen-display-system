@@ -1,13 +1,12 @@
 import { updateOrderStatusAction } from "@/app/actions";
 import { OrderForm } from "@/components/OrderForm";
+import { ORDER_STATUSES } from "@/lib/constants/status";
 import {
   listMenuItems,
   listOrders,
   listTables,
   mapOrderIdToLines,
 } from "@/lib/kitchen-db";
-
-const STATUSES = ["Pending", "In progress", "Completed", "Cancelled"] as const;
 
 const OrdersPage = async () => {
   const orders = await listOrders();
@@ -74,7 +73,7 @@ const OrdersPage = async () => {
                     defaultValue={o.order_status}
                     className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
                   >
-                    {STATUSES.map((s) => (
+                    {ORDER_STATUSES.map((s) => (
                       <option key={s} value={s}>
                         {s}
                       </option>

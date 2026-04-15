@@ -1,5 +1,10 @@
 import "dotenv/config";
-import { PrismaClient } from "@prisma/client";
+import {
+  OrderStatus,
+  PrismaClient,
+  QueueStatus,
+  TableStatus,
+} from "@prisma/client";
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 
@@ -33,7 +38,7 @@ const main = async () => {
       prisma.table.create({
         data: {
           table_number: tn,
-          status: "Available",
+          status: TableStatus.Available,
           qr_token: crypto.randomUUID(),
         },
       }),
@@ -136,9 +141,9 @@ const main = async () => {
         { name: "Pad Thai", qty: 2, spec: "Extra lime" },
         { name: "Thai Iced Tea", qty: 2, spec: "" },
       ],
-      "Pending",
+      OrderStatus.Pending,
       null,
-      "Queued",
+      QueueStatus.Queued,
     ],
     [
       1,
@@ -146,9 +151,9 @@ const main = async () => {
         { name: "Green Curry (chicken)", qty: 1, spec: "" },
         { name: "Pad Thai", qty: 1, spec: "" },
       ],
-      "In progress",
+      OrderStatus.InProgress,
       0,
-      "Preparing",
+      QueueStatus.Preparing,
     ],
   ] as const;
 

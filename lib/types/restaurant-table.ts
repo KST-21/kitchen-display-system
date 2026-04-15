@@ -1,7 +1,9 @@
+import { TableStatus } from "@prisma/client";
+
 export type RestaurantTable = {
   table_id: number;
   table_number: string;
-  status: string;
+  status: TableStatus;
   qr_token: string;
 };
 

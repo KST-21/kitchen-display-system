@@ -6,11 +6,18 @@ datasource db {
   provider = "postgresql"
 }
 
+enum TableStatus {
+  Available
+  Occupied
+  Reserved
+  Cleaning
+}
+
 model Table {
-  table_id     Int    @id @default(autoincrement())
-  table_number String @unique
-  status       String @default("Available")
-  qr_token     String @unique
+  table_id     Int         @id @default(autoincrement())
+  table_number String      @unique
+  status       TableStatus @default(Available)
+  qr_token     String      @unique
 
   orders Order[]
 }
@@ -33,11 +40,18 @@ model Menu_Item {
   order_items Order_Item[]
 }
 
+enum OrderStatus {
+  Pending
+  InProgress
+  Completed
+  Cancelled
+}
+
 model Order {
-  order_id     Int      @id @default(autoincrement())
+  order_id     Int         @id @default(autoincrement())
   table_id     Int
-  created_at   DateTime @default(now())
-  order_status String   @default("Pending")
+  created_at   DateTime    @default(now())
+  order_status OrderStatus @default(Pending)
   order_number Int?
 
   table Table         @relation(fields: [table_id], references: [table_id])
@@ -58,6 +72,13 @@ model Order_Item {
   menu  Menu_Item @relation(fields: [menu_id], references: [menu_id])
 }
 
+enum QueueStatus {
+  Queued
+  Preparing
+  Ready
+  Served
+}
+
 model KitchenQueue {
   queue_id Int @id @default(autoincrement())
 
@@ -65,9 +86,9 @@ model KitchenQueue {
   chef_id  Int?
 
   position   Int
-  created_at DateTime @default(now())
-  status     String   @default("Queued")
-  priority   Int      @default(0)
+  created_at DateTime    @default(now())
+  status     QueueStatus @default(Queued)
+  priority   Int         @default(0)
 
   order Order @relation(fields: [order_id], references: [order_id], onDelete: Cascade)
   chef  Chef? @relation(fields: [chef_id], references: [chef_id])

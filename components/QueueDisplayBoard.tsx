@@ -4,12 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DISPLAY_COLUMNS, groupQueueRowsByStatus } from "@/lib/queue-display";
 import { Chef, QueueRow } from "@/lib/types";
-
-const NEXT_STATUS: Record<string, string> = {
-  Queued: "Preparing",
-  Preparing: "Ready",
-  Ready: "Served",
-};
+import { getNextQueueStatus } from "@/lib/constants/queue";
 
 const requestElementFullscreen = (el: HTMLElement): Promise<void> => {
   const w = el as HTMLElement & { webkitRequestFullscreen?: () => void };
@@ -64,7 +59,7 @@ const TicketCard = ({
   onAdvance: () => void;
   onRemove?: () => void;
 }) => {
-  const next = NEXT_STATUS[r.Status];
+  const next = getNextQueueStatus(r.Status);
   const isServed = r.Status === "Served";
   const big = Boolean(chefPassView);
   return (

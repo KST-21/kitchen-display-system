@@ -7,6 +7,8 @@ import {
   RestaurantTableWithDelete,
 } from "@/lib/types";
 import { sort } from "./utils/sort";
+import { OrderStatus, QueueStatus, TableStatus } from "@prisma/client";
+import { getNextQueueStatus } from "./constants/queue";
 
 export const newQrToken = () => crypto.randomUUID();
 
@@ -83,7 +85,7 @@ export const getTableByQrToken = async (token: string) => {
 export const upsertTable = async (
   id: number | null,
   table_number: string,
-  status: string,
+  status: TableStatus,
 ) => {
   if (!table_number.trim()) {
     throw new Error("Table number is required");
@@ -108,7 +110,10 @@ export const upsertTable = async (
   }
 };
 
-export const updateTableStatus = async (tableId: number, status: string) => {
+export const updateTableStatus = async (
+  tableId: number,
+  status: TableStatus,
+) => {
   await prisma.table.update({
     where: { table_id: tableId },
     data: { status },
@@ -244,7 +249,7 @@ const nextQueuePosition = async (): Promise<number> => {
 export const createOrderWithItems = async (
   tableId: number,
   lineItems: { menuId: number; quantity: number; specialRequest: string }[],
-  orderStatus = "Pending",
+  orderStatus = OrderStatus.Pending,
 ): Promise<number> => {
   if (!lineItems.length) {
     throw new Error("Order must include at least one line item");
@@ -374,7 +379,10 @@ export const mapOrderIdToLines = async (): Promise<
   return map;
 };
 
-export const updateOrderStatus = async (orderId: number, status: string) => {
+export const updateOrderStatus = async (
+  orderId: number,
+  status: OrderStatus,
+) => {
   await prisma.order.update({
     where: { order_id: orderId },
     data: { order_status: status },
@@ -410,7 +418,7 @@ export const listKitchenQueue = async (): Promise<QueueRow[]> => {
 export const updateQueue = async (
   queueId: number,
   chefId: number | null,
-  status: string,
+  status: QueueStatus,
 ) => {
   await prisma.kitchenQueue.update({
     where: { queue_id: queueId },
@@ -445,11 +453,9 @@ export const advanceQueueStatus = async (
 
   if (!row) return;
 
-  const order = ["Queued", "Preparing", "Ready", "Served"];
-  const idx = order.indexOf(row.status);
-  if (idx < 0 || idx >= order.length - 1) return;
+  const next = getNextQueueStatus(row.status);
+  if (!next) return;
 
-  const next = order[idx + 1];
   const assignedChef = chefId !== undefined ? chefId : row.chef_id;
 
   await updateQueue(queueId, assignedChef, next);

@@ -1,8 +1,9 @@
+import { QueueStatus } from "@prisma/client";
 import { QueueRow } from "./types";
 
 /** Light, high-contrast column styling for kitchen displays. */
 export const DISPLAY_COLUMNS: {
-  status: string;
+  status: QueueStatus;
   title: string;
   headerClass: string;
   cardClass: string;
