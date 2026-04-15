@@ -8,10 +8,8 @@ import { parseSortParams, sort } from "@/lib/utils/sort";
 import Link from "next/link";
 import { StatusSelect } from "@/components/StatusSelect";
 import { TableCardMenu } from "@/components/TableCardMenu";
-
-const STATUSES = ["Available", "Occupied", "Reserved", "Cleaning"] as const;
-
-type Status = (typeof STATUSES)[number];
+import { TableStatus } from "@prisma/client";
+import { TABLE_STATUSES } from "@/lib/constants/status";
 
 type SP = {
   add?: string;
@@ -21,7 +19,10 @@ type SP = {
   dir?: string;
 };
 
-const statusStyles = {
+const statusStyles: Record<
+  TableStatus | "Total",
+  { dot?: string; card: string }
+> = {
   Total: {
     card: "bg-slate-100 text-slate-800",
   },
@@ -146,7 +147,7 @@ const TablesPage = async ({ searchParams }: { searchParams: Promise<SP> }) => {
                 defaultValue={editing?.status ?? "Available"}
                 className="w-44 rounded-lg border border-slate-300 px-3 py-2 text-sm"
               >
-                {STATUSES.map((s) => (
+                {TABLE_STATUSES.map((s) => (
                   <option key={s} value={s}>
                     {s}
                   </option>
@@ -201,7 +202,7 @@ const TablesPage = async ({ searchParams }: { searchParams: Promise<SP> }) => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
                 <span
-                  className={`h-2.5 w-2.5 rounded-full ${statusStyles[r.status as Status].dot}`}
+                  className={`h-2.5 w-2.5 rounded-full ${statusStyles[r.status as TableStatus].dot}`}
                 />
                 {r.status}
               </div>
@@ -210,7 +211,7 @@ const TablesPage = async ({ searchParams }: { searchParams: Promise<SP> }) => {
                 tableId={r.table_id}
                 currentStatus={r.status}
                 action={updateTableStatusAction}
-                statuses={STATUSES}
+                statuses={TABLE_STATUSES}
               />
             </div>
 

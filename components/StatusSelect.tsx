@@ -1,5 +1,6 @@
 "use client";
 
+import { TableStatus } from "@prisma/client";
 import { useState, useTransition } from "react";
 
 export const StatusSelect = ({
@@ -9,14 +10,14 @@ export const StatusSelect = ({
   statuses,
 }: {
   tableId: number;
-  currentStatus: string;
+  currentStatus: TableStatus;
   action: (formData: FormData) => Promise<void>;
-  statuses: readonly string[];
+  statuses: readonly TableStatus[];
 }) => {
   const [status, setStatus] = useState(currentStatus);
   const [isPending, startTransition] = useTransition();
 
-  const handleChange = (newStatus: string) => {
+  const handleChange = (newStatus: TableStatus) => {
     setStatus(newStatus);
 
     const formData = new FormData();
@@ -31,7 +32,11 @@ export const StatusSelect = ({
   return (
     <select
       value={status}
-      onChange={(e) => handleChange(e.target.value)}
+      onChange={(e) => {
+        const value = e.target.value;
+        if (!statuses.includes(value as TableStatus)) return;
+        handleChange(value as TableStatus);
+      }}
       className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
       disabled={isPending}
     >

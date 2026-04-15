@@ -4,22 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import * as k from "@/lib/kitchen-db";
 import { broadcastKitchenState } from "@/lib/ws-server";
-
-const ORDER_STATUSES = [
-  "Pending",
-  "In progress",
-  "Completed",
-  "Cancelled",
-] as const;
-
-const QUEUE_STATUSES = ["Queued", "Preparing", "Ready", "Served"] as const;
-
-const TABLE_STATUSES = [
-  "Available",
-  "Occupied",
-  "Reserved",
-  "Cleaning",
-] as const;
+import {
+  ORDER_STATUSES,
+  QUEUE_STATUSES,
+  TABLE_STATUSES,
+} from "@/lib/constants/status";
+import { OrderStatus, QueueStatus, TableStatus } from "@prisma/client";
 
 const revalidateAll = () => {
   revalidatePath("/", "layout");
@@ -85,11 +75,12 @@ const parseOrderLines = (
 export const upsertTableAction = async (formData: FormData) => {
   const id = parseOptionalId(formData.get("table_id"));
   const table_number = String(formData.get("table_number") ?? "").trim();
-  const status = String(formData.get("status") ?? "Available").trim();
+  const rawStatus = String(formData.get("status") ?? TableStatus.Available);
   if (!table_number) return;
-  if (!TABLE_STATUSES.includes(status as (typeof TABLE_STATUSES)[number])) {
+  if (!TABLE_STATUSES.includes(rawStatus as TableStatus)) {
     return;
   }
+  const status = rawStatus as TableStatus;
   await k.upsertTable(id, table_number, status);
   revalidateAll();
 };
@@ -106,12 +97,13 @@ export const deleteTableAction = async (formData: FormData) => {
 
 export const updateTableStatusAction = async (formData: FormData) => {
   const id = Number(formData.get("table_id"));
-  const status = String(formData.get("status") ?? "").trim();
+  const rawStatus = String(formData.get("status") ?? "").trim();
   if (!Number.isFinite(id)) return;
-  if (!TABLE_STATUSES.includes(status as (typeof TABLE_STATUSES)[number]))
-    return;
+  if (!TABLE_STATUSES.includes(rawStatus as TableStatus)) return;
+
+  const status = rawStatus as TableStatus;
   await k.updateTableStatus(id, status);
-  if (status === "Occupied") {
+  if (status === TableStatus.Occupied) {
     await k.regenerateTableQrToken(id);
   }
   revalidateAll();
@@ -164,10 +156,11 @@ export const deleteMenuItemAction = async (formData: FormData) => {
 
 export const updateOrderStatusAction = async (formData: FormData) => {
   const orderId = Number(formData.get("order_id"));
-  const status = String(formData.get("order_status") ?? "");
-  if (!Number.isFinite(orderId) || !status) return;
-  if (!ORDER_STATUSES.includes(status as (typeof ORDER_STATUSES)[number]))
-    return;
+  const rawStatus = String(formData.get("order_status") ?? "").trim();
+  if (!Number.isFinite(orderId) || !rawStatus) return;
+  if (!ORDER_STATUSES.includes(rawStatus as OrderStatus)) return;
+
+  const status = rawStatus as OrderStatus;
   await k.updateOrderStatus(orderId, status);
   revalidateAll();
 };
@@ -176,11 +169,12 @@ export const updateQueueAction = async (formData: FormData) => {
   const queueId = Number(formData.get("queue_id"));
   const chefRaw = formData.get("chef_id");
   const chefId = chefRaw === "" || chefRaw === null ? null : Number(chefRaw);
-  const status = String(formData.get("queue_status") ?? "");
-  if (!Number.isFinite(queueId) || !status) return;
+  const rawStatus = String(formData.get("queue_status") ?? "").trim();
+  if (!Number.isFinite(queueId) || !rawStatus) return;
   if (chefId !== null && !Number.isFinite(chefId)) return;
-  if (!QUEUE_STATUSES.includes(status as (typeof QUEUE_STATUSES)[number]))
+  if (!QUEUE_STATUSES.includes(rawStatus as (typeof QUEUE_STATUSES)[number]))
     return;
+  const status = rawStatus as QueueStatus;
   await k.updateQueue(queueId, chefId, status);
   revalidateAll();
 };

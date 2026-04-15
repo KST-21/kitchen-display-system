@@ -1,3 +1,5 @@
+import { QueueStatus } from "@prisma/client";
+
 export type QueueRow = {
   queue_id: number;
   order_id: number;
@@ -5,7 +7,7 @@ export type QueueRow = {
   chef_name: string | null;
   queueNumber: number;
   created_at: string;
-  Status: string;
+  Status: QueueStatus;
   table_number: string;
   order_status: string;
 };
