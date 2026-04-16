@@ -7,6 +7,7 @@ import {
 } from "@prisma/client";
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
+import bcrypt from "bcrypt";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -30,6 +31,26 @@ const main = async () => {
   await prisma.menu_Item.deleteMany();
   await prisma.chef.deleteMany();
   await prisma.table.deleteMany();
+  await prisma.user.deleteMany();
+
+  const password = await bcrypt.hash("1234", 10);
+
+  await prisma.user.createMany({
+    data: [
+      {
+        name: "Admin",
+        email: "admin@test.com",
+        password,
+        role: "ADMIN",
+      },
+      {
+        name: "Staff",
+        email: "staff@test.com",
+        password,
+        role: "STAFF",
+      },
+    ],
+  });
 
   const tableNumbers = Array.from({ length: 12 }, (_, i) => String(i + 1));
 

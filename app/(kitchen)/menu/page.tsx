@@ -3,6 +3,8 @@ import { SortHeader } from "@/components/SortHeader";
 import { parseSortParams, sort } from "@/lib/utils/sort";
 import { listMenuItemsWithDeleteFlag } from "@/lib/kitchen-db";
 import Link from "next/link";
+import { hasRole, requireRole } from "@/lib/require-role";
+import { Role } from "@prisma/client";
 
 const MenuPage = async ({
   searchParams,
@@ -14,6 +16,10 @@ const MenuPage = async ({
     dir?: string;
   }>;
 }) => {
+  await requireRole(["ADMIN", "STAFF"]);
+
+  const isAdmin = await hasRole([Role.ADMIN]);
+
   const sp = await searchParams;
   const editId = sp.edit ? Number(sp.edit) : null;
   const allRows = await listMenuItemsWithDeleteFlag();
@@ -59,77 +65,79 @@ const MenuPage = async ({
         </div>
       ) : null}
 
-      <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h3 className="text-sm font-medium text-slate-900">
-          {editing ? "Edit item" : "Add item"}
-        </h3>
-        <form
-          action={upsertMenuItemAction}
-          className="mt-4 flex flex-wrap items-end gap-4"
-        >
-          {editing ? (
-            <input type="hidden" name="menu_id" value={editing.menu_id} />
-          ) : null}
-          <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-            Item name
-            <input
-              name="item_name"
-              required
-              defaultValue={editing?.item_name ?? ""}
-              className="w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-            Price (USD)
-            <input
-              name="price"
-              type="number"
-              step="0.01"
-              min="0"
-              required
-              defaultValue={editing?.price ?? ""}
-              className="w-32 rounded-lg border border-slate-300 px-3 py-2 text-sm"
-            />
-          </label>
-          <label className="flex min-w-[min(100%,28rem)] flex-1 flex-col gap-1 text-xs font-medium text-slate-600">
-            Image URL{" "}
-            <span className="font-normal text-slate-400">
-              (optional — shown on guest QR menu)
-            </span>
-            <input
-              name="image_url"
-              type="url"
-              inputMode="url"
-              placeholder="https://… or /your-file.jpg in public/"
-              defaultValue={editing?.image_url ?? ""}
-              className="w-full max-w-xl rounded-lg border border-slate-300 px-3 py-2 text-sm"
-            />
-          </label>
-          <label className="flex items-center gap-2 pt-5 text-sm text-slate-700">
-            <input
-              type="checkbox"
-              name="is_available"
-              defaultChecked={editing ? editing.is_available : true}
-              className="h-4 w-4 rounded border-slate-300"
-            />
-            Available
-          </label>
-          <button
-            type="submit"
-            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-slate-950 hover:bg-amber-400"
+      {isAdmin && (
+        <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h3 className="text-sm font-medium text-slate-900">
+            {editing ? "Edit item" : "Add item"}
+          </h3>
+          <form
+            action={upsertMenuItemAction}
+            className="mt-4 flex flex-wrap items-end gap-4"
           >
-            {editing ? "Save" : "Add"}
-          </button>
-          {editing ? (
-            <Link
-              href="/menu"
-              className="text-sm text-slate-600 underline hover:text-slate-900"
+            {editing ? (
+              <input type="hidden" name="menu_id" value={editing.menu_id} />
+            ) : null}
+            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+              Item name
+              <input
+                name="item_name"
+                required
+                defaultValue={editing?.item_name ?? ""}
+                className="w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+              Price (USD)
+              <input
+                name="price"
+                type="number"
+                step="0.01"
+                min="0"
+                required
+                defaultValue={editing?.price ?? ""}
+                className="w-32 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="flex min-w-[min(100%,28rem)] flex-1 flex-col gap-1 text-xs font-medium text-slate-600">
+              Image URL{" "}
+              <span className="font-normal text-slate-400">
+                (optional — shown on guest QR menu)
+              </span>
+              <input
+                name="image_url"
+                type="url"
+                inputMode="url"
+                placeholder="https://… or /your-file.jpg in public/"
+                defaultValue={editing?.image_url ?? ""}
+                className="w-full max-w-xl rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="flex items-center gap-2 pt-5 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                name="is_available"
+                defaultChecked={editing ? editing.is_available : true}
+                className="h-4 w-4 rounded border-slate-300"
+              />
+              Available
+            </label>
+            <button
+              type="submit"
+              className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-slate-950 hover:bg-amber-400"
             >
-              Cancel edit
-            </Link>
-          ) : null}
-        </form>
-      </div>
+              {editing ? "Save" : "Add"}
+            </button>
+            {editing ? (
+              <Link
+                href="/menu"
+                className="text-sm text-slate-600 underline hover:text-slate-900"
+              >
+                Cancel edit
+              </Link>
+            ) : null}
+          </form>
+        </div>
+      )}
 
       <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <table className="w-full text-left text-sm">
@@ -179,21 +187,23 @@ const MenuPage = async ({
                   >
                     Edit
                   </Link>
-                  <form action={deleteMenuItemAction} className="ml-4 inline">
-                    <input type="hidden" name="menu_id" value={r.menu_id} />
-                    <button
-                      type="submit"
-                      disabled={!r.can_delete}
-                      className="text-red-600 hover:underline disabled:cursor-not-allowed disabled:opacity-40"
-                      title={
-                        r.can_delete
-                          ? "Delete item"
-                          : "On past orders — mark unavailable instead"
-                      }
-                    >
-                      Delete
-                    </button>
-                  </form>
+                  {isAdmin && (
+                    <form action={deleteMenuItemAction} className="ml-4 inline">
+                      <input type="hidden" name="menu_id" value={r.menu_id} />
+                      <button
+                        type="submit"
+                        disabled={!r.can_delete}
+                        className="text-red-600 hover:underline disabled:cursor-not-allowed disabled:opacity-40"
+                        title={
+                          r.can_delete
+                            ? "Delete item"
+                            : "On past orders — mark unavailable instead"
+                        }
+                      >
+                        Delete
+                      </button>
+                    </form>
+                  )}
                 </td>
               </tr>
             ))}

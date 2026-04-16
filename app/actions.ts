@@ -9,7 +9,11 @@ import {
   QUEUE_STATUSES,
   TABLE_STATUSES,
 } from "@/lib/constants/status";
-import { OrderStatus, QueueStatus, TableStatus } from "@prisma/client";
+import { OrderStatus, QueueStatus, Role, TableStatus } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { clearSession, setSession } from "@/lib/auth";
+import bcrypt from "bcrypt";
+import { requireRoleAction } from "@/lib/require-role";
 
 const revalidateAll = () => {
   revalidatePath("/", "layout");
@@ -73,6 +77,8 @@ const parseOrderLines = (
 };
 
 export const upsertTableAction = async (formData: FormData) => {
+  await requireRoleAction([Role.ADMIN]);
+
   const id = parseOptionalId(formData.get("table_id"));
   const table_number = String(formData.get("table_number") ?? "").trim();
   const rawStatus = String(formData.get("status") ?? TableStatus.Available);
@@ -86,6 +92,8 @@ export const upsertTableAction = async (formData: FormData) => {
 };
 
 export const deleteTableAction = async (formData: FormData) => {
+  await requireRoleAction([Role.ADMIN]);
+
   const id = Number(formData.get("table_id"));
   if (!Number.isFinite(id)) return;
   if (!k.canDeleteTable(id)) {
@@ -96,6 +104,8 @@ export const deleteTableAction = async (formData: FormData) => {
 };
 
 export const updateTableStatusAction = async (formData: FormData) => {
+  await requireRoleAction([Role.ADMIN, Role.STAFF]);
+
   const id = Number(formData.get("table_id"));
   const rawStatus = String(formData.get("status") ?? "").trim();
   if (!Number.isFinite(id)) return;
@@ -110,6 +120,8 @@ export const updateTableStatusAction = async (formData: FormData) => {
 };
 
 export const regenerateTableQrAction = async (formData: FormData) => {
+  await requireRoleAction([Role.ADMIN, Role.STAFF]);
+
   const id = Number(formData.get("table_id"));
   if (!Number.isFinite(id)) return;
   await k.regenerateTableQrToken(id);
@@ -117,6 +129,8 @@ export const regenerateTableQrAction = async (formData: FormData) => {
 };
 
 export const upsertChefAction = async (formData: FormData) => {
+  await requireRoleAction([Role.ADMIN]);
+
   const id = parseOptionalId(formData.get("chef_id"));
   const name = String(formData.get("name") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
@@ -126,6 +140,8 @@ export const upsertChefAction = async (formData: FormData) => {
 };
 
 export const deleteChefAction = async (formData: FormData) => {
+  await requireRoleAction([Role.ADMIN]);
+
   const id = Number(formData.get("chef_id"));
   if (!Number.isFinite(id)) return;
   await k.deleteChef(id);
@@ -133,6 +149,8 @@ export const deleteChefAction = async (formData: FormData) => {
 };
 
 export const upsertMenuItemAction = async (formData: FormData) => {
+  await requireRoleAction([Role.ADMIN]);
+
   const id = parseOptionalId(formData.get("menu_id"));
   const item_name = String(formData.get("item_name") ?? "").trim();
   const price = parsePrice(formData.get("price"));
@@ -145,6 +163,8 @@ export const upsertMenuItemAction = async (formData: FormData) => {
 };
 
 export const deleteMenuItemAction = async (formData: FormData) => {
+  await requireRoleAction([Role.ADMIN]);
+
   const id = Number(formData.get("menu_id"));
   if (!Number.isFinite(id)) return;
   if (!k.canDeleteMenuItem(id)) {
@@ -155,6 +175,8 @@ export const deleteMenuItemAction = async (formData: FormData) => {
 };
 
 export const updateOrderStatusAction = async (formData: FormData) => {
+  await requireRoleAction([Role.ADMIN, Role.STAFF]);
+
   const orderId = Number(formData.get("order_id"));
   const rawStatus = String(formData.get("order_status") ?? "").trim();
   if (!Number.isFinite(orderId) || !rawStatus) return;
@@ -166,6 +188,8 @@ export const updateOrderStatusAction = async (formData: FormData) => {
 };
 
 export const updateQueueAction = async (formData: FormData) => {
+  await requireRoleAction([Role.ADMIN, Role.STAFF]);
+
   const queueId = Number(formData.get("queue_id"));
   const chefRaw = formData.get("chef_id");
   const chefId = chefRaw === "" || chefRaw === null ? null : Number(chefRaw);
@@ -186,6 +210,8 @@ type CreateOrderResult =
 export const createOrderAction = async (
   formData: FormData,
 ): Promise<CreateOrderResult> => {
+  await requireRoleAction([Role.ADMIN, Role.STAFF]);
+
   const tableId = Number(formData.get("table_id"));
   const linesRaw = String(formData.get("lines") ?? "[]");
   if (!Number.isFinite(tableId)) {
@@ -208,6 +234,8 @@ export const createOrderAction = async (
 export const createGuestOrderByQrAction = async (
   formData: FormData,
 ): Promise<CreateOrderResult> => {
+  await requireRoleAction([Role.ADMIN, Role.STAFF]);
+
   const token = String(formData.get("qr_token") ?? "").trim();
   const linesRaw = String(formData.get("lines") ?? "[]");
   const table = await k.getTableByQrToken(token);
@@ -233,8 +261,30 @@ export const createGuestOrderByQrAction = async (
 };
 
 export const advanceQueueStatusAction = async (formData: FormData) => {
+  await requireRoleAction([Role.ADMIN, Role.STAFF]);
+
   const queueId = Number(formData.get("queue_id"));
   if (!Number.isFinite(queueId)) return;
   await k.advanceQueueStatus(queueId);
   revalidateAll();
+};
+
+export const loginAction = async (formData: FormData) => {
+  const email = String(formData.get("email"));
+  const password = String(formData.get("password"));
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) return;
+
+  const ok = await bcrypt.compare(password, user.password);
+  if (!ok) return;
+
+  await setSession({ id: user.user_id, role: user.role });
+  redirect("/");
+};
+
+export const logoutAction = async () => {
+  console.log("logging out");
+  await clearSession();
+  redirect("/login");
 };

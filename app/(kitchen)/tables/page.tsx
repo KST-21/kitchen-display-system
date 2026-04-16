@@ -8,8 +8,9 @@ import { parseSortParams, sort } from "@/lib/utils/sort";
 import Link from "next/link";
 import { StatusSelect } from "@/components/StatusSelect";
 import { TableCardMenu } from "@/components/TableCardMenu";
-import { TableStatus } from "@prisma/client";
+import { Role, TableStatus } from "@prisma/client";
 import { TABLE_STATUSES } from "@/lib/constants/status";
+import { hasRole, requireRole } from "@/lib/require-role";
 
 type SP = {
   add?: string;
@@ -45,6 +46,8 @@ const statusStyles: Record<
 } as const;
 
 const TablesPage = async ({ searchParams }: { searchParams: Promise<SP> }) => {
+  await requireRole(["ADMIN", "STAFF"]);
+  const isAdmin = await hasRole([Role.ADMIN]);
   const sp = await searchParams;
   const showAdd = sp.add === "1";
   const editId = sp.edit ? Number(sp.edit) : null;
@@ -118,66 +121,67 @@ const TablesPage = async ({ searchParams }: { searchParams: Promise<SP> }) => {
         ))}
       </div>
 
-      {showAdd || editing ? (
-        <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-sm font-medium text-slate-900">
-            {editing ? `Edit table ${editing.table_number}` : "Add new table"}
-          </h3>
-          <form
-            action={upsertTableAction}
-            className="mt-4 flex flex-wrap items-end gap-4"
-          >
-            {editing ? (
-              <input type="hidden" name="table_id" value={editing.table_id} />
-            ) : null}
-            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-              Table number
-              <input
-                name="table_number"
-                required
-                placeholder="e.g. 13 or Patio-A"
-                defaultValue={editing?.table_number ?? ""}
-                className="w-48 rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-              Status
-              <select
-                name="status"
-                defaultValue={editing?.status ?? "Available"}
-                className="w-44 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+      {isAdmin &&
+        (showAdd || editing ? (
+          <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 className="text-sm font-medium text-slate-900">
+              {editing ? `Edit table ${editing.table_number}` : "Add new table"}
+            </h3>
+            <form
+              action={upsertTableAction}
+              className="mt-4 flex flex-wrap items-end gap-4"
+            >
+              {editing ? (
+                <input type="hidden" name="table_id" value={editing.table_id} />
+              ) : null}
+              <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+                Table number
+                <input
+                  name="table_number"
+                  required
+                  placeholder="e.g. 13 or Patio-A"
+                  defaultValue={editing?.table_number ?? ""}
+                  className="w-48 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+                Status
+                <select
+                  name="status"
+                  defaultValue={editing?.status ?? "Available"}
+                  className="w-44 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                >
+                  {TABLE_STATUSES.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                type="submit"
+                className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-slate-950 hover:bg-amber-400"
               >
-                {TABLE_STATUSES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button
-              type="submit"
-              className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-slate-950 hover:bg-amber-400"
-            >
-              {editing ? "Save" : "Add table"}
-            </button>
+                {editing ? "Save" : "Add table"}
+              </button>
+              <Link
+                href="/tables"
+                className="text-sm text-slate-600 underline hover:text-slate-900"
+              >
+                Cancel
+              </Link>
+            </form>
+          </div>
+        ) : (
+          <div className="mt-6">
             <Link
-              href="/tables"
-              className="text-sm text-slate-600 underline hover:text-slate-900"
+              href="/tables?add=1"
+              className="inline-block rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow hover:bg-slate-800"
             >
-              Cancel
+              + Add table
             </Link>
-          </form>
-        </div>
-      ) : (
-        <div className="mt-6">
-          <Link
-            href="/tables?add=1"
-            className="inline-block rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow hover:bg-slate-800"
-          >
-            + Add table
-          </Link>
-        </div>
-      )}
+          </div>
+        ))}
 
       <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {rows.map((r) => (
@@ -194,6 +198,7 @@ const TablesPage = async ({ searchParams }: { searchParams: Promise<SP> }) => {
                 <TableCardMenu
                   tableId={r.table_id}
                   canDelete={r.can_delete}
+                  isAdmin={isAdmin}
                   onDelete={deleteTableAction}
                 />
               </div>

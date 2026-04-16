@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { LogoutButton } from "@/components/LogoutButton";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,7 @@ const KitchenLayout = ({ children }: { children: React.ReactNode }) => {
             Bright console · tables &amp; queue
           </p>
         </div>
+
         <nav className="flex flex-1 flex-col gap-0.5 p-3">
           {links.map((item) => (
             <Link
@@ -46,6 +48,10 @@ const KitchenLayout = ({ children }: { children: React.ReactNode }) => {
               {item.label}
             </Link>
           ))}
+
+          <div className="border-t border-slate-200 pt-1">
+            <LogoutButton />
+          </div>
         </nav>
       </aside>
       <main className="ml-56 min-w-0 flex-1 overflow-auto p-8">{children}</main>

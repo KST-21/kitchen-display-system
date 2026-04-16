@@ -7,10 +7,12 @@ import { MoreHorizontal } from "lucide-react";
 export const TableCardMenu = ({
   tableId,
   canDelete,
+  isAdmin,
   onDelete,
 }: {
   tableId: number;
   canDelete: boolean;
+  isAdmin: boolean;
   onDelete: (formData: FormData) => Promise<void>;
 }) => {
   const [open, setOpen] = useState(false);
@@ -44,16 +46,18 @@ export const TableCardMenu = ({
             Edit
           </Link>
 
-          <form action={onDelete}>
-            <input type="hidden" name="table_id" value={tableId} />
-            <button
-              type="submit"
-              disabled={!canDelete}
-              className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-40"
-            >
-              Delete
-            </button>
-          </form>
+          {isAdmin && (
+            <form action={onDelete}>
+              <input type="hidden" name="table_id" value={tableId} />
+              <button
+                type="submit"
+                disabled={!canDelete}
+                className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-40"
+              >
+                Delete
+              </button>
+            </form>
+          )}
         </div>
       )}
     </div>
