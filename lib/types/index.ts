@@ -1,3 +1,4 @@
+export * from "./auth";
 export * from "./chef";
 export * from "./menu";
 export * from "./order";

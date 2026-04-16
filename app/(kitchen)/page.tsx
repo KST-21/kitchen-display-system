@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { dashboardCounts } from "@/lib/kitchen-db";
+import { requireRole } from "@/lib/require-role";
 
 const DashboardPage = async () => {
+  await requireRole(["ADMIN", "STAFF"]);
+
   const s = await dashboardCounts();
   const cards = [
     { label: "Tables", value: s.tables.c },

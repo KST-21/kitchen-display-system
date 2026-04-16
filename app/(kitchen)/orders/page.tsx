@@ -7,8 +7,11 @@ import {
   listTables,
   mapOrderIdToLines,
 } from "@/lib/kitchen-db";
+import { requireRole } from "@/lib/require-role";
 
 const OrdersPage = async () => {
+  await requireRole(["ADMIN", "STAFF"]);
+
   const orders = await listOrders();
   const linesByOrder = await mapOrderIdToLines();
   const tables = await listTables();

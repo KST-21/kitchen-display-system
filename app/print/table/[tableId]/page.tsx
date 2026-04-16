@@ -4,6 +4,7 @@ import { getPublicBaseUrl } from "@/lib/public-url";
 import { listTables } from "@/lib/kitchen-db";
 import { PrintButton } from "@/components/PrintButton";
 import QRCode from "qrcode";
+import { requireRole } from "@/lib/require-role";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,8 @@ const PrintTableQrPage = async ({
 }: {
   params: Promise<{ tableId: string }>;
 }) => {
+  await requireRole(["ADMIN", "STAFF"]);
+
   const { tableId: rawId } = await params;
   const id = Number(rawId);
   const tables = await listTables();

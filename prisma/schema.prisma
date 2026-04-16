@@ -93,3 +93,17 @@ model KitchenQueue {
   order Order @relation(fields: [order_id], references: [order_id], onDelete: Cascade)
   chef  Chef? @relation(fields: [chef_id], references: [chef_id])
 }
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+model User {
+  user_id    Int      @id @default(autoincrement())
+  name       String
+  email      String   @unique
+  password   String
+  role       Role     @default(STAFF)
+  created_at DateTime @default(now())
+}

@@ -4,12 +4,15 @@ import { SortHeader } from "@/components/SortHeader";
 import { parseSortParams, sort } from "@/lib/utils/sort";
 import { listChefs, listKitchenQueue } from "@/lib/kitchen-db";
 import { QUEUE_STATUSES } from "@/lib/constants/status";
+import { requireRole } from "@/lib/require-role";
 
 const QueuePage = async ({
   searchParams,
 }: {
   searchParams: Promise<{ sortKey?: string; dir?: string }>;
 }) => {
+  await requireRole(["ADMIN", "STAFF"]);
+
   const sp = await searchParams;
   const allRows = await listKitchenQueue();
   const chefs = await listChefs();
