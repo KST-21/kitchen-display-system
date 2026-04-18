@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DISPLAY_COLUMNS, groupQueueRowsByStatus } from "@/lib/queue-display";
 import { Chef, QueueRow } from "@/lib/types";
@@ -558,14 +557,6 @@ export const QueueDisplayBoard = ({
           >
             {isFullscreen ? "Exit full screen" : "Full screen"}
           </button>
-          {!isFullscreen ? (
-            <Link
-              href="/manage-queue"
-              className="shrink-0 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]"
-            >
-              Manage queue
-            </Link>
-          ) : null}
         </div>
       </header>
 
