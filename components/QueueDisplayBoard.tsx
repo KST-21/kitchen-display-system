@@ -403,7 +403,9 @@ export const QueueDisplayBoard = ({
 
   const pull = useCallback(async () => {
     try {
-      const res = await fetch("/api/display/queue", { cache: "no-store" });
+      const res = await fetch("/api/display/kitchen-queue", {
+        cache: "no-store",
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       applyData(await res.json());
     } catch {
@@ -429,7 +431,7 @@ export const QueueDisplayBoard = ({
       } else {
         const qid = r.queue_id;
         setPendingQueueId(qid);
-        apiPost("/api/display/queue/advance", { queue_id: qid })
+        apiPost("/api/display/kitchen-queue/advance", { queue_id: qid })
           .then(applyData)
           .catch(() => {
             if (mounted.current) setFetchError("Could not update status");
@@ -448,7 +450,7 @@ export const QueueDisplayBoard = ({
       setPendingQueueId(queueId);
       try {
         applyData(
-          await apiPost("/api/display/queue/advance", {
+          await apiPost("/api/display/kitchen-queue/advance", {
             queue_id: queueId,
             chef_id: chefId,
           }),
@@ -467,7 +469,9 @@ export const QueueDisplayBoard = ({
       setPendingQueueId(queueId);
       try {
         applyData(
-          await apiPost("/api/display/queue/remove", { queue_id: queueId }),
+          await apiPost("/api/display/kitchen-queue/remove", {
+            queue_id: queueId,
+          }),
         );
       } catch {
         if (mounted.current) setFetchError("Could not remove ticket");
@@ -495,7 +499,7 @@ export const QueueDisplayBoard = ({
             Pass display · chef station
           </p>
           <h1 className="mt-1 bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-2xl font-bold tracking-tight text-transparent sm:text-3xl lg:text-4xl">
-            Kitchen queue
+            Kitchen queue display
           </h1>
           <p className="mt-1 max-w-xl text-sm text-slate-600">
             Tap a ticket to move it forward. Live updates when connected.
@@ -556,7 +560,7 @@ export const QueueDisplayBoard = ({
           </button>
           {!isFullscreen ? (
             <Link
-              href="/queue"
+              href="/manage-queue"
               className="shrink-0 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]"
             >
               Manage queue

@@ -12,8 +12,8 @@ const links = [
   { href: "/chefs", label: "Chefs" },
   { href: "/menu", label: "Menu" },
   { href: "/orders", label: "Orders" },
-  { href: "/queue", label: "Kitchen queue" },
-  { href: "/display/queue", label: "Queue display" },
+  { href: "/manage-queue", label: "Manage Queue" },
+  { href: "/display/kitchen-queue", label: "Kitchen Queue display" },
 ];
 
 const KitchenLayout = ({ children }: { children: React.ReactNode }) => {
