@@ -40,7 +40,7 @@ const QueuePage = async ({
   return (
     <div className="mx-auto max-w-6xl">
       <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-        Kitchen queue
+        Manage queue
       </h2>
       <p className="mt-1 text-sm text-slate-600">
         One queue row per order. Assign chefs and prep status. For a full-screen
@@ -49,7 +49,7 @@ const QueuePage = async ({
           href="/display/queue"
           className="font-medium text-slate-900 underline decoration-slate-300 underline-offset-2 hover:decoration-slate-500"
         >
-          queue display
+          Kitchen queue display
         </Link>
         .
       </p>
