@@ -235,8 +235,6 @@ export const createOrderAction = async (
 export const createGuestOrderByQrAction = async (
   formData: FormData,
 ): Promise<CreateOrderResult> => {
-  await requireRoleAction([Role.ADMIN, Role.STAFF]);
-
   const token = String(formData.get("qr_token") ?? "").trim();
   const linesRaw = String(formData.get("lines") ?? "[]");
   const session = await k.getSessionByHash(token);
