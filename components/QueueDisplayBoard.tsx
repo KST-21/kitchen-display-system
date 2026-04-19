@@ -4,7 +4,23 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { DISPLAY_COLUMNS, groupQueueRowsByStatus } from "@/lib/queue-display";
 import { Chef, QueueRow } from "@/lib/types";
 import { getNextQueueStatus } from "@/lib/constants/queue";
-import { ChefHat, ClipboardList, Timer } from "lucide-react";
+import {
+  ArrowRight,
+  ChefHat,
+  ClipboardList,
+  Ellipsis,
+  Loader2,
+  Timer,
+} from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 
 const requestElementFullscreen = (el: HTMLElement): Promise<void> => {
   const w = el as HTMLElement & { webkitRequestFullscreen?: () => void };
@@ -25,19 +41,6 @@ const exitDocumentFullscreen = (): Promise<void> => {
     return Promise.resolve();
   }
   return Promise.reject(new Error("Fullscreen not supported"));
-};
-
-const BtnSpinner = ({ light }: { light?: boolean }) => {
-  return (
-    <span
-      className={`inline-block h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-t-transparent ${
-        light
-          ? "border-white/35 border-t-white"
-          : "border-red-300 border-t-red-600"
-      }`}
-      aria-hidden
-    />
-  );
 };
 
 const getElapsedSeconds = (createdAt: string) => {
@@ -84,10 +87,97 @@ const getTimeMeta = (elapsed: number) => {
   }
 };
 
+type ModalState = {
+  queueId: number;
+  queueNumber: number;
+  tableName: string;
+  currentChef: number | null;
+} | null;
+
+const ChefModal = ({
+  modal,
+  chefs,
+  onConfirm,
+  onCancel,
+}: {
+  modal: {
+    queueId: number;
+    queueNumber: number;
+    tableName: string;
+    currentChef: number | null;
+  };
+  chefs: Chef[];
+  onConfirm: (queueId: number, chefId: number | null) => void;
+  onCancel: () => void;
+}) => {
+  const [selectedChef, setSelectedChef] = useState<string>(
+    modal.currentChef != null ? String(modal.currentChef) : "",
+  );
+
+  return (
+    <AlertDialog open onOpenChange={(open) => !open && onCancel()}>
+      <AlertDialogContent className="bg-white shadow-lg ring-slate-500 rounded-xl !max-w-md w-full p-6">
+        <AlertDialogHeader className="space-y-1">
+          <AlertDialogTitle className="text-xl font-bold text-slate-900">
+            Start preparing ticket #{modal.queueNumber}
+          </AlertDialogTitle>
+
+          <AlertDialogDescription className="text-sm text-slate-600">
+            Table{" "}
+            <span className="font-semibold text-slate-800">
+              {modal.tableName}
+            </span>{" "}
+            — assign a chef to continue.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+
+        <div className="mt-4">
+          <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Assign chef
+            <select
+              value={selectedChef}
+              onChange={(e) => setSelectedChef(e.target.value)}
+              className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
+            >
+              <option value="">Unassigned</option>
+              {chefs.map((c) => (
+                <option key={c.chef_id} value={c.chef_id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <AlertDialogFooter className="flex gap-2 border-0 items-center">
+          <AlertDialogCancel
+            onClick={onCancel}
+            className="!h-10 rounded-lg px-5 text-sm font-medium hover:bg-slate-100"
+          >
+            Cancel
+          </AlertDialogCancel>
+
+          <button
+            type="button"
+            onClick={() => {
+              const chefId = selectedChef ? Number(selectedChef) : null;
+              onConfirm(modal.queueId, chefId);
+            }}
+            className="h-10 rounded-lg bg-slate-900 px-5 text-sm font-semibold text-white transition hover:bg-slate-800 active:scale-[0.98]"
+          >
+            <div className="flex items-center">
+              Confirm <ArrowRight className="size-4 mx-1" /> Preparing
+            </div>
+          </button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+};
+
 const TicketCard = ({
   r,
   cardClass,
-  actionBtnClass,
   chefPassView,
   isBusy,
   animDelayMs,
@@ -96,7 +186,6 @@ const TicketCard = ({
 }: {
   r: QueueRow;
   cardClass: string;
-  actionBtnClass: string;
   chefPassView?: boolean;
   isBusy?: boolean;
   animDelayMs?: number;
@@ -177,16 +266,15 @@ const TicketCard = ({
           type="button"
           disabled={isBusy}
           onClick={onAdvance}
-          className={`relative z-[1] mt-2 flex w-full appearance-none items-center justify-center gap-2 rounded-lg font-semibold transition duration-150 [text-shadow:0_1px_0_rgb(0_0_0_/_0.2)] disabled:cursor-wait disabled:opacity-90 ${
+          className={`relative z-[1] mt-2 flex w-full items-center justify-center gap-2 rounded-lg font-semibold transition duration-150 disabled:cursor-wait disabled:opacity-70 ${
             big
               ? "min-h-[2.75rem] py-2.5 text-sm"
               : "min-h-[2.25rem] py-2 text-[11px]"
-          } ${actionBtnClass || "bg-slate-800 text-white hover:bg-slate-700 [&_span]:text-white"}`}
+          } bg-slate-900 text-white hover:bg-slate-800`}
         >
           {isBusy ? (
             <>
-              <BtnSpinner light />
-              <span>Updating…</span>
+              <Loader2 className="h-4 w-4 animate-spin" />
             </>
           ) : (
             <>
@@ -194,7 +282,7 @@ const TicketCard = ({
                 className="transition group-hover:translate-x-0.5"
                 aria-hidden
               >
-                →
+                <ArrowRight className="size-3" />
               </span>
               {next}
             </>
@@ -206,7 +294,7 @@ const TicketCard = ({
           type="button"
           disabled={isBusy}
           onClick={onRemove}
-          className={`relative mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-red-200/90 bg-gradient-to-b from-red-50 to-red-100/80 font-semibold text-red-800 shadow-sm transition duration-150 hover:border-red-300 hover:from-red-100 hover:to-red-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400 active:scale-[0.98] disabled:cursor-wait ${
+          className={`relative mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 font-semibold text-red-700 shadow-sm transition hover:bg-red-100 active:scale-[0.98] disabled:cursor-wait ${
             big
               ? "min-h-[2.75rem] py-2.5 text-sm"
               : "min-h-[2.25rem] py-2 text-[11px]"
@@ -214,8 +302,7 @@ const TicketCard = ({
         >
           {isBusy ? (
             <>
-              <BtnSpinner />
-              <span>Clearing…</span>
+              <Loader2 className="h-4 w-4 animate-spin" />
             </>
           ) : (
             "Clear"
@@ -223,107 +310,6 @@ const TicketCard = ({
         </button>
       ) : null}
     </li>
-  );
-};
-
-type ModalState = {
-  queueId: number;
-  queueNumber: number;
-  tableName: string;
-  currentChef: number | null;
-} | null;
-
-const ChefModal = ({
-  modal,
-  chefs,
-  onConfirm,
-  onCancel,
-}: {
-  modal: NonNullable<ModalState>;
-  chefs: Chef[];
-  onConfirm: (queueId: number, chefId: number | null) => void;
-  onCancel: () => void;
-}) => {
-  const [selectedChef, setSelectedChef] = useState<string>(
-    modal.currentChef != null ? String(modal.currentChef) : "",
-  );
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex animate-fade-in items-center justify-center bg-slate-900/45 px-4 backdrop-blur-[2px]"
-      onClick={onCancel}
-      role="presentation"
-    >
-      <div
-        className="animate-modal-in w-full max-w-md rounded-2xl border border-white/30 bg-white p-6 shadow-2xl shadow-slate-900/20 ring-1 ring-slate-900/5"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="chef-modal-title"
-      >
-        <div className="flex items-start gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 text-lg font-bold text-white shadow-md shadow-amber-900/25">
-            {modal.queueNumber}
-          </div>
-          <div className="min-w-0 flex-1">
-            <h3
-              id="chef-modal-title"
-              className="text-lg font-bold tracking-tight text-slate-900"
-            >
-              Start preparing
-            </h3>
-            <p className="mt-0.5 text-sm text-slate-600">
-              Ticket{" "}
-              <span className="font-semibold text-slate-800">
-                #{modal.queueNumber}
-              </span>
-              {" · "}
-              Table{" "}
-              <span className="font-semibold text-slate-800">
-                {modal.tableName}
-              </span>
-            </p>
-          </div>
-        </div>
-
-        <label className="mt-6 flex flex-col gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-          Assign chef
-          <select
-            value={selectedChef}
-            onChange={(e) => setSelectedChef(e.target.value)}
-            className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3 text-sm font-medium text-slate-900 shadow-inner transition hover:border-sky-300 hover:bg-white focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/30"
-            autoFocus
-          >
-            <option value="">Unassigned</option>
-            {chefs.map((c) => (
-              <option key={c.chef_id} value={c.chef_id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <div className="mt-8 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-[0.99]"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              const chefId = selectedChef ? Number(selectedChef) : null;
-              onConfirm(modal.queueId, chefId);
-            }}
-            className="rounded-xl bg-gradient-to-b from-sky-600 to-sky-700 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-sky-900/25 transition hover:from-sky-500 hover:to-sky-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500 active:scale-[0.99]"
-          >
-            Confirm → Preparing
-          </button>
-        </div>
-      </div>
-    </div>
   );
 };
 
@@ -623,11 +609,8 @@ export const QueueDisplayBoard = ({
           <button
             type="button"
             onClick={() => void toggleFullscreen()}
-            className={`shrink-0 rounded-xl px-4 py-2 text-xs font-semibold shadow-md transition active:scale-[0.98] ${
-              isFullscreen
-                ? "border border-slate-600 bg-slate-800 text-white hover:bg-slate-700"
-                : "border border-amber-500/20 bg-gradient-to-b from-amber-500 to-amber-600 text-white shadow-amber-900/20 hover:from-amber-400 hover:to-amber-500"
-            }`}
+            className="shrink-0 rounded-xl px-4 py-2 text-xs font-semibold shadow-md transition active:scale-[0.98]
+              border border-slate-600 bg-slate-800 text-white hover:bg-slate-700"
             title={
               isFullscreen
                 ? "Leave full screen (Esc)"
@@ -678,7 +661,7 @@ export const QueueDisplayBoard = ({
                   {items.length === 0 ? (
                     <li className="flex flex-1 flex-col items-center justify-center gap-1 py-10 text-center">
                       <span className="text-2xl opacity-40" aria-hidden>
-                        ···
+                        <Ellipsis className="size-6" />
                       </span>
                       <span className="text-xs font-medium text-slate-400">
                         Nothing here
@@ -690,7 +673,6 @@ export const QueueDisplayBoard = ({
                         key={r.queue_id}
                         r={r}
                         cardClass={col.cardClass}
-                        actionBtnClass={col.actionBtnClass}
                         chefPassView={isFullscreen}
                         isBusy={pendingQueueId === r.queue_id}
                         animDelayMs={Math.min(idx, 10) * 42}
