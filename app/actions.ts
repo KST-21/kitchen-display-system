@@ -114,17 +114,8 @@ export const updateTableStatusAction = async (formData: FormData) => {
   const status = rawStatus as TableStatus;
   await k.updateTableStatus(id, status);
   if (status === TableStatus.Occupied) {
-    await k.regenerateTableQrToken(id);
+    await k.createSessionForTable(id);
   }
-  revalidateAll();
-};
-
-export const regenerateTableQrAction = async (formData: FormData) => {
-  await requireRoleAction([Role.ADMIN, Role.STAFF]);
-
-  const id = Number(formData.get("table_id"));
-  if (!Number.isFinite(id)) return;
-  await k.regenerateTableQrToken(id);
   revalidateAll();
 };
 
@@ -220,7 +211,17 @@ export const createOrderAction = async (
   const parsed = parseOrderLines(linesRaw);
   if (!parsed.ok) return { ok: false, message: parsed.message };
   try {
-    const orderId = await k.createOrderWithItems(tableId, parsed.lines);
+    const session = await k.getActiveSessionByTableId(tableId);
+
+    if (!session) {
+      return { ok: false, message: "No active session for this table." };
+    }
+
+    const orderId = await k.createOrderWithItems(
+      tableId,
+      session.session_id,
+      parsed.lines,
+    );
     revalidateAll();
     return { ok: true, orderId };
   } catch (e) {
@@ -238,18 +239,24 @@ export const createGuestOrderByQrAction = async (
 
   const token = String(formData.get("qr_token") ?? "").trim();
   const linesRaw = String(formData.get("lines") ?? "[]");
-  const table = await k.getTableByQrToken(token);
-  if (!table) {
+  const session = await k.getSessionByHash(token);
+
+  if (!session) {
     return {
       ok: false,
       message:
         "This table link is invalid or was reset. Ask staff for a new QR code.",
     };
   }
+
   const parsed = parseOrderLines(linesRaw);
   if (!parsed.ok) return { ok: false, message: parsed.message };
   try {
-    const orderId = await k.createOrderWithItems(table.table_id, parsed.lines);
+    const orderId = await k.createOrderWithItems(
+      session.table.table_id,
+      session.session_id,
+      parsed.lines,
+    );
     revalidateAll();
     revalidatePath(`/order/${token}`);
     return { ok: true, orderId };

@@ -5,6 +5,7 @@ import { parseSortParams, sort } from "@/lib/utils/sort";
 import { listChefs, listKitchenQueue } from "@/lib/kitchen-db";
 import { QUEUE_STATUSES } from "@/lib/constants/status";
 import { requireRole } from "@/lib/require-role";
+import { format } from "date-fns";
 
 const QueuePage = async ({
   searchParams,
@@ -19,17 +20,18 @@ const QueuePage = async ({
   const { sortKey, dir } = parseSortParams(sp);
   const rows = sort(allRows, sortKey, dir, {
     queueNumber: (r) => r.queueNumber,
-    order_id: (r) => r.order_id,
+    item_name: (r) => r.item_name,
+    quantity: (r) => r.quantity,
+    special_request: (r) => r.special_request ?? "",
     table_number: (r) => r.table_number,
     chef_name: (r) => r.chef_name ?? "",
     Status: (r) => r.Status,
-    order_status: (r) => r.order_status,
     created_at: (r) => r.created_at,
   });
 
   const sh = (col: string, label: string) => (
     <SortHeader
-      basePath="/queue"
+      basePath="/manage-queue"
       column={col}
       label={label}
       currentSort={sortKey}
@@ -63,11 +65,12 @@ const QueuePage = async ({
           <thead className="border-b border-slate-200 bg-slate-50 text-xs font-medium uppercase tracking-wide text-slate-500">
             <tr>
               {sh("queueNumber", "#")}
-              {sh("order_id", "Order")}
+              {sh("item_name", "Item")}
+              {sh("quantity", "Qty")}
+              {sh("special_request", "Notes")}
               {sh("table_number", "Table")}
               {sh("chef_name", "Chef")}
-              {sh("Status", "Prep status")}
-              {sh("order_status", "Order status")}
+              {sh("Status", "Status")}
               {sh("created_at", "Queued at")}
               <th className="px-3 py-3 text-right" />
             </tr>
@@ -92,24 +95,34 @@ const QueuePage = async ({
                 <td className="px-3 py-3 tabular-nums text-slate-500">
                   {r.queueNumber}
                 </td>
-                <td className="px-3 py-3 font-medium tabular-nums">
-                  {r.order_id}
+
+                <td className="px-3 py-3 font-medium">{r.item_name}</td>
+
+                <td className="px-3 py-3">{r.quantity}</td>
+
+                <td className="px-3 py-3 text-slate-600">
+                  {r.special_request ?? "—"}
                 </td>
+
                 <td className="px-3 py-3 font-medium">{r.table_number}</td>
+
                 <td className="px-3 py-3 text-slate-600">
                   {r.chef_name ?? "—"}
                 </td>
+
                 <td className="px-3 py-3 text-slate-700">{r.Status}</td>
-                <td className="px-3 py-3">{r.order_status}</td>
+
                 <td className="px-3 py-3 text-xs text-slate-500">
-                  {r.created_at}
+                  {format(new Date(r.created_at), "yyyy-MM-dd p")}
                 </td>
+
                 <td className="px-3 py-3 text-right">
                   <form
                     action={updateQueueAction}
                     className="inline-flex flex-wrap items-center justify-end gap-2"
                   >
                     <input type="hidden" name="queue_id" value={r.queue_id} />
+
                     <select
                       name="chef_id"
                       defaultValue={r.chef_id ?? ""}
@@ -123,6 +136,7 @@ const QueuePage = async ({
                         </option>
                       ))}
                     </select>
+
                     <select
                       name="queue_status"
                       defaultValue={r.Status}
@@ -135,6 +149,7 @@ const QueuePage = async ({
                         </option>
                       ))}
                     </select>
+
                     <button
                       type="submit"
                       className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800"

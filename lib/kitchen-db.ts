@@ -7,7 +7,12 @@ import {
   RestaurantTableWithDelete,
 } from "@/lib/types";
 import { sort } from "./utils/sort";
-import { OrderStatus, QueueStatus, TableStatus } from "@prisma/client";
+import {
+  OrderStatus,
+  QueueStatus,
+  TableSessionStatus,
+  TableStatus,
+} from "@prisma/client";
 import { getNextQueueStatus } from "./constants/queue";
 
 export const newQrToken = () => crypto.randomUUID();
@@ -33,6 +38,20 @@ export const dashboardCounts = async () => {
 export const listTables = async () => {
   const tables = await prisma.table.findMany();
 
+  return sort(tables, "table_number", "asc", {
+    table_number: (t) => {
+      const n = Number(t.table_number);
+      return isNaN(n) ? t.table_number : n;
+    },
+  });
+};
+
+export const listOccupiedTables = async () => {
+  const tables = await prisma.table.findMany({
+    where: {
+      status: TableStatus.Occupied,
+    },
+  });
   return sort(tables, "table_number", "asc", {
     table_number: (t) => {
       const n = Number(t.table_number);
@@ -76,9 +95,33 @@ export const listTablesWithDeleteFlag = async (): Promise<
   );
 };
 
-export const getTableByQrToken = async (token: string) => {
-  return await prisma.table.findUnique({
-    where: { qr_token: token.trim() },
+export const getSessionByHash = async (hash: string) => {
+  return await prisma.tableSession.findUnique({
+    where: { hash: hash.trim() },
+    include: {
+      table: true,
+    },
+  });
+};
+
+export const getActiveSessionByTableId = async (tableId: number) => {
+  return await prisma.tableSession.findFirst({
+    where: {
+      table_id: tableId,
+      status: TableSessionStatus.ACTIVE,
+    },
+    orderBy: {
+      created_at: "desc",
+    },
+  });
+};
+
+export const createSessionForTable = async (tableId: number) => {
+  return await prisma.tableSession.create({
+    data: {
+      table_id: tableId,
+      hash: crypto.randomUUID(),
+    },
   });
 };
 
@@ -96,7 +139,6 @@ export const upsertTable = async (
       data: {
         table_number,
         status,
-        qr_token: crypto.randomUUID(),
       },
     });
   } else {
@@ -118,19 +160,6 @@ export const updateTableStatus = async (
     where: { table_id: tableId },
     data: { status },
   });
-};
-
-export const regenerateTableQrToken = async (
-  tableId: number,
-): Promise<string> => {
-  const token = newQrToken();
-
-  await prisma.table.update({
-    where: { table_id: tableId },
-    data: { qr_token: token },
-  });
-
-  return token;
 };
 
 export const deleteTable = async (id: number) => {
@@ -248,6 +277,7 @@ const nextQueuePosition = async (): Promise<number> => {
 
 export const createOrderWithItems = async (
   tableId: number,
+  sessionId: number,
   lineItems: { menuId: number; quantity: number; specialRequest: string }[],
   orderStatus = OrderStatus.Pending,
 ): Promise<number> => {
@@ -255,30 +285,11 @@ export const createOrderWithItems = async (
     throw new Error("Order must include at least one line item");
   }
 
-  const table = await prisma.table.findUnique({
-    where: { table_id: tableId },
-  });
-  if (!table) throw new Error("Table not found");
-
-  for (const li of lineItems) {
-    if (!Number.isInteger(li.quantity) || li.quantity < 1) {
-      throw new Error("Invalid quantity");
-    }
-
-    const menu = await prisma.menu_Item.findUnique({
-      where: { menu_id: li.menuId },
-    });
-
-    if (!menu) throw new Error("Unknown menu item");
-    if (!menu.is_available) {
-      throw new Error("Item unavailable");
-    }
-  }
-
   return await prisma.$transaction(async (tx) => {
     const order = await tx.order.create({
       data: {
         table_id: tableId,
+        session_id: sessionId,
         order_status: orderStatus,
       },
     });
@@ -288,8 +299,10 @@ export const createOrderWithItems = async (
       data: { order_number: order.order_id },
     });
 
+    const createdItems = [];
+
     for (const li of lineItems) {
-      await tx.order_Item.create({
+      const item = await tx.order_Item.create({
         data: {
           order_id: order.order_id,
           menu_id: li.menuId,
@@ -297,18 +310,22 @@ export const createOrderWithItems = async (
           special_request: li.specialRequest.trim() || null,
         },
       });
+
+      createdItems.push(item);
     }
 
-    const position = await nextQueuePosition();
+    for (const item of createdItems) {
+      const position = await nextQueuePosition();
 
-    await tx.kitchenQueue.create({
-      data: {
-        order_id: order.order_id,
-        position,
-        status: "Queued",
-        priority: 0,
-      },
-    });
+      await tx.kitchenQueue.create({
+        data: {
+          order_item_id: item.order_item_id,
+          position,
+          status: "Queued",
+          priority: 0,
+        },
+      });
+    }
 
     return order.order_id;
   });
@@ -326,6 +343,7 @@ export const listOrders = async (): Promise<OrderRow[]> => {
     order_id: o.order_id,
     table_id: o.table_id,
     table_number: o.table.table_number,
+    session_id: o.session_id,
     created_at: o.created_at.toISOString(),
     order_status: o.order_status,
     order_number: o.order_number,
@@ -393,9 +411,14 @@ export const listKitchenQueue = async (): Promise<QueueRow[]> => {
   const rows = await prisma.kitchenQueue.findMany({
     include: {
       chef: true,
-      order: {
+      orderItem: {
         include: {
-          table: true,
+          menu: true,
+          order: {
+            include: {
+              table: true,
+            },
+          },
         },
       },
     },
@@ -404,14 +427,21 @@ export const listKitchenQueue = async (): Promise<QueueRow[]> => {
 
   return rows.map((k) => ({
     queue_id: k.queue_id,
-    order_id: k.order_id,
+
+    order_item_id: k.order_item_id,
+    item_name: k.orderItem.menu.item_name,
+    quantity: k.orderItem.quantity,
+    special_request: k.orderItem.special_request,
+
+    order_id: k.orderItem.order.order_id,
+    table_number: k.orderItem.order.table.table_number,
+
     chef_id: k.chef_id,
     chef_name: k.chef?.name ?? null,
+
     queueNumber: k.position,
     created_at: k.created_at.toISOString(),
     Status: k.status,
-    table_number: k.order.table.table_number,
-    order_status: k.order.order_status,
   }));
 };
 
@@ -427,19 +457,6 @@ export const updateQueue = async (
       status,
     },
   });
-
-  if (status === "Served") {
-    const queue = await prisma.kitchenQueue.findUnique({
-      where: { queue_id: queueId },
-      include: {
-        order: true,
-      },
-    });
-
-    if (queue?.order?.table_id) {
-      await regenerateTableQrToken(queue.order.table_id);
-    }
-  }
 };
 
 /** Advance queue status to the next column: Queued→Preparing→Ready→Served */
@@ -465,17 +482,26 @@ export const advanceQueueStatus = async (
 export const removeServedQueueEntry = async (queueId: number) => {
   const row = await prisma.kitchenQueue.findUnique({
     where: { queue_id: queueId },
+    include: {
+      orderItem: {
+        include: {
+          order: true,
+        },
+      },
+    },
   });
 
   if (!row || row.status !== "Served") return;
 
+  const orderId = row.orderItem.order.order_id;
+
   await prisma.$transaction([
-    prisma.order.update({
-      where: { order_id: row.order_id },
-      data: { order_status: "Completed" },
-    }),
     prisma.kitchenQueue.delete({
       where: { queue_id: queueId },
+    }),
+    prisma.order.update({
+      where: { order_id: orderId },
+      data: { order_status: "Completed" },
     }),
   ]);
 };

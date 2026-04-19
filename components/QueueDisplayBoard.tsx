@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { DISPLAY_COLUMNS, groupQueueRowsByStatus } from "@/lib/queue-display";
 import { Chef, QueueRow } from "@/lib/types";
 import { getNextQueueStatus } from "@/lib/constants/queue";
+import { ChefHat, ClipboardList, Timer } from "lucide-react";
 
 const requestElementFullscreen = (el: HTMLElement): Promise<void> => {
   const w = el as HTMLElement & { webkitRequestFullscreen?: () => void };
@@ -39,6 +40,50 @@ const BtnSpinner = ({ light }: { light?: boolean }) => {
   );
 };
 
+const getElapsedSeconds = (createdAt: string) => {
+  const created = new Date(createdAt).getTime();
+  const now = Date.now();
+  return Math.floor((now - created) / 1000);
+};
+
+const formatElapsed = (seconds: number) => {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+
+  if (h > 0) {
+    return `${h}:${m.toString().padStart(2, "0")}:${s
+      .toString()
+      .padStart(2, "0")}`;
+  }
+
+  return `${m}:${s.toString().padStart(2, "0")}`;
+};
+
+const timeStyle = {
+  fresh: {
+    timeColor: "text-emerald-600",
+  },
+  warning: {
+    timeColor: "text-amber-600",
+    urgencyClass: "ring-2 ring-amber-300",
+  },
+  urgent: {
+    timeColor: "text-red-600",
+    urgencyClass: "ring-2 ring-red-400",
+  },
+} as const;
+
+const getTimeMeta = (elapsed: number) => {
+  if (elapsed > 300) {
+    return timeStyle.urgent;
+  } else if (elapsed > 180) {
+    return timeStyle.warning;
+  } else {
+    return timeStyle.fresh;
+  }
+};
+
 const TicketCard = ({
   r,
   cardClass,
@@ -61,6 +106,9 @@ const TicketCard = ({
   const next = getNextQueueStatus(r.Status);
   const isServed = r.Status === "Served";
   const big = Boolean(chefPassView);
+  const elapsed = getElapsedSeconds(r.created_at);
+  const timeMeta = getTimeMeta(elapsed);
+
   return (
     <li
       style={
@@ -87,12 +135,43 @@ const TicketCard = ({
           T{r.table_number}
         </span>
       </div>
-      <p
-        className={`relative mt-1 text-slate-600 ${big ? "text-sm" : "text-xs"}`}
+
+      <div className={`relative mt-1 ${big ? "text-base" : "text-sm"}`}>
+        <span className="font-semibold text-slate-800">{r.item_name}</span>
+        <span className="ml-2 text-slate-600">×{r.quantity}</span>
+      </div>
+
+      <div
+        className={`flex items-center gap-1.5 mt-1 ${
+          big ? "text-sm" : "text-xs"
+        } ${timeMeta.timeColor}`}
       >
-        #{r.order_id}
-        {r.chef_name ? <> · {r.chef_name}</> : null}
-      </p>
+        <Timer className={big ? "h-4 w-4" : "h-3.5 w-3.5"} />
+        <span className="font-semibold">{formatElapsed(elapsed)}</span>
+      </div>
+
+      {r.special_request && (
+        <div
+          className={`flex items-center gap-1.5 text-amber-700 ${
+            big ? "text-sm" : "text-xs"
+          }`}
+        >
+          <ClipboardList className="h-3.5 w-3.5 shrink-0" />
+          <span>{r.special_request}</span>
+        </div>
+      )}
+
+      {r.chef_name && (
+        <div
+          className={`flex items-center gap-1.5 text-slate-500 ${
+            big ? "text-sm" : "text-xs"
+          }`}
+        >
+          <ChefHat className="h-3.5 w-3.5 shrink-0" />
+          <span>{r.chef_name}</span>
+        </div>
+      )}
+
       {next ? (
         <button
           type="button"
