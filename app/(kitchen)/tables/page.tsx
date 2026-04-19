@@ -184,51 +184,64 @@ const TablesPage = async ({ searchParams }: { searchParams: Promise<SP> }) => {
         ))}
 
       <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {rows.map((r) => (
-          <div
-            key={r.table_id}
-            className="rounded-2xl border p-4 shadow-md flex flex-col gap-3 bg-white"
-          >
-            <div className="relative flex items-center justify-center">
-              <h3 className="font-semibold text-slate-900">
-                Table {r.table_number}
-              </h3>
+        {rows.map((r) => {
+          const isOccupied = r.status === TableStatus.Occupied;
 
-              <div className="absolute right-0">
-                <TableCardMenu
-                  tableId={r.table_id}
-                  canDelete={r.can_delete}
-                  isAdmin={isAdmin}
-                  onDelete={deleteTableAction}
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
-                <span
-                  className={`h-2.5 w-2.5 rounded-full ${statusStyles[r.status as TableStatus].dot}`}
-                />
-                {r.status}
-              </div>
-
-              <StatusSelect
-                tableId={r.table_id}
-                currentStatus={r.status}
-                action={updateTableStatusAction}
-                statuses={TABLE_STATUSES}
-              />
-            </div>
-
-            <Link
-              href={`/print/table/${r.table_id}`}
-              target="_blank"
-              className="mt-2 w-full rounded-xl bg-slate-900 px-4 py-2 text-center text-sm font-medium text-white hover:bg-slate-800"
+          return (
+            <div
+              key={r.table_id}
+              className="rounded-2xl border p-4 shadow-md flex flex-col gap-3 bg-white"
             >
-              Print QR
-            </Link>
-          </div>
-        ))}
+              <div className="relative flex items-center justify-center">
+                <h3 className="font-semibold text-slate-900">
+                  Table {r.table_number}
+                </h3>
+
+                <div className="absolute right-0">
+                  <TableCardMenu
+                    tableId={r.table_id}
+                    canDelete={r.can_delete}
+                    isAdmin={isAdmin}
+                    onDelete={deleteTableAction}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
+                  <span
+                    className={`h-2.5 w-2.5 rounded-full ${statusStyles[r.status as TableStatus].dot}`}
+                  />
+                  {r.status}
+                </div>
+
+                <StatusSelect
+                  tableId={r.table_id}
+                  currentStatus={r.status}
+                  action={updateTableStatusAction}
+                  statuses={TABLE_STATUSES}
+                />
+              </div>
+
+              {isOccupied ? (
+                <Link
+                  href={`/print/table/${r.table_id}`}
+                  target="_blank"
+                  className="mt-2 w-full rounded-xl bg-slate-900 px-4 py-2 text-center text-sm font-medium text-white hover:bg-slate-800"
+                >
+                  Print QR
+                </Link>
+              ) : (
+                <button
+                  disabled
+                  className="mt-2 w-full cursor-not-allowed rounded-xl bg-slate-200 px-4 py-2 text-center text-sm font-medium text-slate-500"
+                >
+                  Set to Occupied to Print QR
+                </button>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

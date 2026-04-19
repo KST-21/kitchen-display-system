@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getPublicBaseUrl } from "@/lib/public-url";
-import { listTables } from "@/lib/kitchen-db";
+import { getActiveSessionByTableId, listTables } from "@/lib/kitchen-db";
 import { PrintButton } from "@/components/PrintButton";
 import QRCode from "qrcode";
 import { requireRole } from "@/lib/require-role";
@@ -21,8 +21,16 @@ const PrintTableQrPage = async ({
   const table = tables.find((t) => t.table_id === id);
   if (!table) notFound();
 
+  const session = await getActiveSessionByTableId(table.table_id);
+
+  if (!session) {
+    throw new Error(
+      "No active session for this table. Set table to Occupied first.",
+    );
+  }
+
   const base = await getPublicBaseUrl();
-  const orderUrl = `${base}/order/${encodeURIComponent(table.qr_token)}`;
+  const orderUrl = `${base}/order/${encodeURIComponent(session.hash)}`;
   const qrDataUrl = await QRCode.toDataURL(orderUrl, {
     width: 280,
     margin: 2,

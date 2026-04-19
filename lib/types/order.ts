@@ -7,6 +7,7 @@ export type OrderRow = {
   created_at: string;
   order_status: OrderStatus;
   order_number: number | null;
+  session_id: number;
 };
 
 export type OrderLine = {

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { GuestOrderForm } from "@/components/GuestOrderForm";
-import { getTableByQrToken, listMenuItems } from "@/lib/kitchen-db";
+import { getSessionByHash, listMenuItems } from "@/lib/kitchen-db";
 
 export const dynamic = "force-dynamic";
 
@@ -10,8 +10,9 @@ const GuestOrderPage = async ({
   params: Promise<{ token: string }>;
 }) => {
   const { token } = await params;
-  const table = await getTableByQrToken(token);
-  if (!table) notFound();
+  const session = await getSessionByHash(token);
+
+  if (!session) notFound();
 
   const menu = await listMenuItems();
 
@@ -31,7 +32,7 @@ const GuestOrderPage = async ({
             Self-order
           </p>
           <h1 className="relative mt-3 text-4xl font-extrabold tracking-tight text-slate-900">
-            Table {table.table_number}
+            Table {session.table.table_number}
           </h1>
           <p className="relative mx-auto mt-3 max-w-sm text-sm leading-relaxed text-slate-600">
             Browse the menu with photos, add notes, and send your order straight
@@ -40,9 +41,9 @@ const GuestOrderPage = async ({
         </header>
         <div className="mt-8">
           <GuestOrderForm
-            qrToken={table.qr_token}
+            qrToken={session.hash}
             menu={menu}
-            tableNumber={table.table_number}
+            tableNumber={session.table.table_number}
           />
         </div>
       </div>

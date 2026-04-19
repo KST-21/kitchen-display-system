@@ -3,8 +3,8 @@ import { OrderForm } from "@/components/OrderForm";
 import { ORDER_STATUSES } from "@/lib/constants/status";
 import {
   listMenuItems,
+  listOccupiedTables,
   listOrders,
-  listTables,
   mapOrderIdToLines,
 } from "@/lib/kitchen-db";
 import { requireRole } from "@/lib/require-role";
@@ -14,7 +14,7 @@ const OrdersPage = async () => {
 
   const orders = await listOrders();
   const linesByOrder = await mapOrderIdToLines();
-  const tables = await listTables();
+  const tables = await listOccupiedTables();
   const menu = await listMenuItems();
 
   return (

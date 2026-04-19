@@ -3,6 +3,7 @@ import {
   OrderStatus,
   PrismaClient,
   QueueStatus,
+  TableSessionStatus,
   TableStatus,
 } from "@prisma/client";
 import { Pool } from "pg";
@@ -28,6 +29,7 @@ const main = async () => {
   await prisma.kitchenQueue.deleteMany();
   await prisma.order_Item.deleteMany();
   await prisma.order.deleteMany();
+  await prisma.tableSession.deleteMany();
   await prisma.menu_Item.deleteMany();
   await prisma.chef.deleteMany();
   await prisma.table.deleteMany();
@@ -60,7 +62,6 @@ const main = async () => {
         data: {
           table_number: tn,
           status: TableStatus.Available,
-          qr_token: crypto.randomUUID(),
         },
       }),
     ),
@@ -181,9 +182,18 @@ const main = async () => {
   for (const [ti, items, orderStatus, chefIdx, queueStatus] of scenarios) {
     const table = tables[ti];
 
+    const session = await prisma.tableSession.create({
+      data: {
+        table_id: table.table_id,
+        hash: crypto.randomUUID(),
+        status: TableSessionStatus.ACTIVE,
+      },
+    });
+
     const order = await prisma.order.create({
       data: {
         table_id: table.table_id,
+        session_id: session.session_id,
         order_status: orderStatus,
       },
     });
@@ -193,8 +203,10 @@ const main = async () => {
       data: { order_number: order.order_id },
     });
 
+    const createdItems = [];
+
     for (const item of items) {
-      await prisma.order_Item.create({
+      const created = await prisma.order_Item.create({
         data: {
           order_id: order.order_id,
           menu_id: menuByName[item.name],
@@ -202,20 +214,23 @@ const main = async () => {
           special_request: item.spec || null,
         },
       });
+      createdItems.push(created);
     }
 
-    const max = await prisma.kitchenQueue.aggregate({
-      _max: { position: true },
-    });
+    for (const item of createdItems) {
+      const max = await prisma.kitchenQueue.aggregate({
+        _max: { position: true },
+      });
 
-    await prisma.kitchenQueue.create({
-      data: {
-        order_id: order.order_id,
-        chef_id: chefIdx !== null ? chefs[chefIdx].chef_id : null,
-        position: (max._max.position ?? 0) + 1,
-        status: queueStatus,
-      },
-    });
+      await prisma.kitchenQueue.create({
+        data: {
+          order_item_id: item.order_item_id,
+          chef_id: chefIdx !== null ? chefs[chefIdx].chef_id : null,
+          position: (max._max.position ?? 0) + 1,
+          status: queueStatus,
+        },
+      });
+    }
 
     await prisma.table.update({
       where: { table_id: table.table_id },

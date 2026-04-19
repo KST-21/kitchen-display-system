@@ -17,8 +17,27 @@ model Table {
   table_id     Int         @id @default(autoincrement())
   table_number String      @unique
   status       TableStatus @default(Available)
-  qr_token     String      @unique
 
+  sessions TableSession[]
+  orders   Order[]
+}
+
+enum TableSessionStatus {
+  ACTIVE
+  CLOSED
+}
+
+model TableSession {
+  session_id Int @id @default(autoincrement())
+
+  table_id Int
+  hash     String @unique
+
+  status TableSessionStatus @default(ACTIVE)
+
+  created_at DateTime @default(now())
+
+  table  Table   @relation(fields: [table_id], references: [table_id])
   orders Order[]
 }
 
@@ -48,15 +67,19 @@ enum OrderStatus {
 }
 
 model Order {
-  order_id     Int         @id @default(autoincrement())
-  table_id     Int
+  order_id Int @id @default(autoincrement())
+
+  table_id   Int
+  session_id Int
+
   created_at   DateTime    @default(now())
   order_status OrderStatus @default(Pending)
   order_number Int?
 
-  table Table         @relation(fields: [table_id], references: [table_id])
+  table   Table        @relation(fields: [table_id], references: [table_id])
+  session TableSession @relation(fields: [session_id], references: [session_id])
+
   items Order_Item[]
-  queue KitchenQueue?
 }
 
 model Order_Item {
@@ -70,6 +93,8 @@ model Order_Item {
 
   order Order     @relation(fields: [order_id], references: [order_id], onDelete: Cascade)
   menu  Menu_Item @relation(fields: [menu_id], references: [menu_id])
+
+  queue KitchenQueue?
 }
 
 enum QueueStatus {
@@ -82,16 +107,16 @@ enum QueueStatus {
 model KitchenQueue {
   queue_id Int @id @default(autoincrement())
 
-  order_id Int  @unique
-  chef_id  Int?
+  order_item_id Int  @unique
+  chef_id       Int?
 
   position   Int
   created_at DateTime    @default(now())
   status     QueueStatus @default(Queued)
   priority   Int         @default(0)
 
-  order Order @relation(fields: [order_id], references: [order_id], onDelete: Cascade)
-  chef  Chef? @relation(fields: [chef_id], references: [chef_id])
+  orderItem Order_Item @relation(fields: [order_item_id], references: [order_item_id], onDelete: Cascade)
+  chef      Chef?      @relation(fields: [chef_id], references: [chef_id])
 }
 
 enum Role {
