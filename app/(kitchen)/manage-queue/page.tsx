@@ -48,7 +48,7 @@ const QueuePage = async ({
         One queue row per order. Assign chefs and prep status. For a full-screen
         pass board, open{" "}
         <Link
-          href="/display/queue"
+          href="/display/kitchen-queue"
           className="font-medium text-slate-900 underline decoration-slate-300 underline-offset-2 hover:decoration-slate-500"
         >
           Kitchen queue display
