@@ -117,10 +117,61 @@ export const getActiveSessionByTableId = async (tableId: number) => {
 };
 
 export const createSessionForTable = async (tableId: number) => {
+  const existing = await prisma.tableSession.findFirst({
+    where: {
+      table_id: tableId,
+      status: TableSessionStatus.ACTIVE,
+    },
+  });
+
+  if (existing) return existing;
+
   return await prisma.tableSession.create({
     data: {
       table_id: tableId,
       hash: crypto.randomUUID(),
+    },
+  });
+};
+
+export async function listActiveSessionsPrisma() {
+  return prisma.tableSession.findMany({
+    where: {
+      status: TableSessionStatus.ACTIVE,
+    },
+    orderBy: {
+      created_at: "desc",
+    },
+  });
+}
+
+export async function getSessionItemsWithOrderInfoPrisma(sessionId: number) {
+  const items = await prisma.order_Item.findMany({
+    where: {
+      order: {
+        session_id: sessionId,
+      },
+    },
+    include: {
+      menu: true,
+      order: true,
+    },
+    orderBy: {
+      order_item_id: "asc",
+    },
+  });
+
+  return items;
+}
+
+export const closeActiveSessionByTableId = async (tableId: number) => {
+  await prisma.tableSession.updateMany({
+    where: {
+      table_id: tableId,
+      status: TableSessionStatus.ACTIVE,
+    },
+    data: {
+      status: TableSessionStatus.CLOSED,
     },
   });
 };
