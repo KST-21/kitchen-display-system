@@ -139,6 +139,9 @@ export async function listActiveSessionsPrisma() {
     where: {
       status: TableSessionStatus.ACTIVE,
     },
+    include: {
+      table: true,
+    },
     orderBy: {
       created_at: "desc",
     },

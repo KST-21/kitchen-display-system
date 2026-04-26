@@ -25,7 +25,7 @@ const OrdersPage = async () => {
     <div className="mx-auto max-w-5xl">
       <h2 className="text-2xl font-semibold text-slate-900">Orders</h2>
 
-      <div className="mt-8">
+      <div className="mt-6">
         <OrderForm tables={tables} menu={menu} />
       </div>
 
@@ -57,15 +57,11 @@ const OrdersPage = async () => {
               <div className="flex justify-between items-center">
                 <div>
                   <div className="font-semibold">
-                    Table {session.table_id}
+                    Table {session.table.table_number}
                     <span className="text-slate-500">
                       {" "}
                       · {new Date(session.created_at).toLocaleTimeString()}
                     </span>
-                  </div>
-
-                  <div className="text-sm text-slate-500">
-                    Session #{session.session_id}
                   </div>
                 </div>
 
