@@ -1,25 +1,22 @@
-import { upsertChefAction } from "@/app/actions";
 import { ChefDeleteForm } from "@/components/ChefDeleteForm";
+import { ChefFormDialog } from "@/components/ChefFormDialog";
 import { SortHeader } from "@/components/SortHeader";
 import { parseSortParams, sort } from "@/lib/utils/sort";
 import { listChefs } from "@/lib/kitchen-db";
-import Link from "next/link";
 import { hasRole, requireRole } from "@/lib/require-role";
 import { Role } from "@prisma/client";
 
 const ChefsPage = async ({
   searchParams,
 }: {
-  searchParams: Promise<{ edit?: string; sortKey?: string; dir?: string }>;
+  searchParams: Promise<{ sortKey?: string; dir?: string }>;
 }) => {
   await requireRole(["ADMIN", "STAFF"]);
 
   const isAdmin = await hasRole([Role.ADMIN]);
 
   const sp = await searchParams;
-  const editId = sp.edit ? Number(sp.edit) : null;
   const allRows = await listChefs();
-  const editing = editId ? allRows.find((r) => r.chef_id === editId) : null;
   const { sortKey, dir } = parseSortParams(sp);
   const rows = sort(allRows, sortKey, dir, {
     chef_id: (r) => r.chef_id,
@@ -45,50 +42,12 @@ const ChefsPage = async ({
       <p className="mt-1 text-sm text-slate-600">Kitchen staff directory.</p>
 
       {isAdmin && (
-        <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-sm font-medium text-slate-900">
-            {editing ? "Edit chef" : "Add chef"}
-          </h3>
-          <form
-            action={upsertChefAction}
-            className="mt-4 flex flex-wrap items-end gap-4"
-          >
-            {editing ? (
-              <input type="hidden" name="chef_id" value={editing.chef_id} />
-            ) : null}
-            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-              Name
-              <input
-                name="name"
-                required
-                defaultValue={editing?.name ?? ""}
-                className="w-56 rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-              Phone
-              <input
-                name="phone"
-                required
-                defaultValue={editing?.phone ?? ""}
-                className="w-56 rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              />
-            </label>
-            <button
-              type="submit"
-              className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-slate-950 hover:bg-amber-400"
-            >
-              {editing ? "Save" : "Add"}
+        <div className="mt-6">
+          <ChefFormDialog>
+            <button className="inline-block rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow hover:bg-slate-800">
+              + Add chef
             </button>
-            {editing ? (
-              <Link
-                href="/chefs"
-                className="text-sm text-slate-600 underline hover:text-slate-900"
-              >
-                Cancel edit
-              </Link>
-            ) : null}
-          </form>
+          </ChefFormDialog>
         </div>
       )}
 
@@ -115,12 +74,19 @@ const ChefsPage = async ({
                 <td className="px-3 py-3 text-slate-700">{r.phone}</td>
                 <td className="px-3 py-3 text-right">
                   <span className="inline-flex flex-wrap items-center justify-end gap-3">
-                    <Link
-                      href={`/chefs?edit=${r.chef_id}`}
-                      className="text-amber-700 hover:underline"
-                    >
-                      Edit
-                    </Link>
+                    {isAdmin && (
+                      <ChefFormDialog
+                        editing={{
+                          chef_id: r.chef_id,
+                          name: r.name,
+                          phone: r.phone,
+                        }}
+                      >
+                        <button className="text-amber-700 hover:underline">
+                          Edit
+                        </button>
+                      </ChefFormDialog>
+                    )}
                     {isAdmin && <ChefDeleteForm chefId={r.chef_id} />}
                   </span>
                 </td>

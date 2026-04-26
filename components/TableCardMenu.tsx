@@ -1,16 +1,20 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import Link from "next/link";
 import { MoreHorizontal } from "lucide-react";
+import { TableFormDialog } from "./TableFormDialog";
+import { TableStatus } from "@prisma/client";
 
 export const TableCardMenu = ({
   tableId,
+  tableNumber,
   canDelete,
   isAdmin,
   onDelete,
 }: {
   tableId: number;
+  tableNumber: string;
+  status: TableStatus;
   canDelete: boolean;
   isAdmin: boolean;
   onDelete: (formData: FormData) => Promise<void>;
@@ -20,10 +24,15 @@ export const TableCardMenu = ({
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as Node)) {
+      const target = e.target as HTMLElement;
+
+      if (target.closest("[data-dialog-content]")) return;
+
+      if (!ref.current?.contains(target)) {
         setOpen(false);
       }
     };
+
     document.addEventListener("click", handler);
     return () => document.removeEventListener("click", handler);
   }, []);
@@ -37,27 +46,29 @@ export const TableCardMenu = ({
         <MoreHorizontal size={18} />
       </button>
 
-      {open && (
-        <div className="absolute right-0 mt-2 w-32 rounded-xl border border-slate-200 bg-white shadow-md">
-          <Link
-            href={`/tables?edit=${tableId}`}
-            className="block px-3 py-2 text-sm hover:bg-slate-50"
+      {open && isAdmin && (
+        <div className="absolute right-0 mt-2 w-32 rounded-xl border border-slate-200 bg-white shadow-md overflow-hidden">
+          <TableFormDialog
+            editing={{
+              tableId: tableId,
+              tableNumber: tableNumber,
+            }}
           >
-            Edit
-          </Link>
+            <button className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-40">
+              Edit
+            </button>
+          </TableFormDialog>
 
-          {isAdmin && (
-            <form action={onDelete}>
-              <input type="hidden" name="table_id" value={tableId} />
-              <button
-                type="submit"
-                disabled={!canDelete}
-                className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-40"
-              >
-                Delete
-              </button>
-            </form>
-          )}
+          <form action={onDelete}>
+            <input type="hidden" name="table_id" value={tableId} />
+            <button
+              type="submit"
+              disabled={!canDelete}
+              className="w-full text-left px-3 py-2 text-sm text-red-600 enabled:hover:bg-red-50 disabled:opacity-40 disabled:select-none"
+            >
+              Delete
+            </button>
+          </form>
         </div>
       )}
     </div>
