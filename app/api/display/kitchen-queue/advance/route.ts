@@ -20,7 +20,7 @@ export const POST = async (request: Request) => {
       queueId,
       chefId !== undefined && Number.isFinite(chefId) ? chefId : undefined,
     );
-    broadcastKitchenState();
+    await broadcastKitchenState();
     return NextResponse.json({
       rows: await listKitchenQueue(),
       chefs: await listChefs(),

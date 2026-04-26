@@ -16,7 +16,7 @@ export const POST = async (request: Request) => {
       return NextResponse.json({ error: "Invalid queue_id" }, { status: 400 });
     }
     await removeServedQueueEntry(queueId);
-    broadcastKitchenState();
+    await broadcastKitchenState();
     return NextResponse.json({
       rows: await listKitchenQueue(),
       chefs: await listChefs(),
