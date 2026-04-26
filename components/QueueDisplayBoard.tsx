@@ -43,9 +43,8 @@ const exitDocumentFullscreen = (): Promise<void> => {
   return Promise.reject(new Error("Fullscreen not supported"));
 };
 
-const getElapsedSeconds = (createdAt: string) => {
+const getElapsedSeconds = (createdAt: string, now: number) => {
   const created = new Date(createdAt).getTime();
-  const now = Date.now();
   return Math.floor((now - created) / 1000);
 };
 
@@ -181,6 +180,7 @@ const TicketCard = ({
   chefPassView,
   isBusy,
   animDelayMs,
+  now,
   onAdvance,
   onRemove,
 }: {
@@ -189,13 +189,14 @@ const TicketCard = ({
   chefPassView?: boolean;
   isBusy?: boolean;
   animDelayMs?: number;
+  now: number;
   onAdvance: () => void;
   onRemove?: () => void;
 }) => {
   const next = getNextQueueStatus(r.Status);
   const isServed = r.Status === "Served";
   const big = Boolean(chefPassView);
-  const elapsed = getElapsedSeconds(r.created_at);
+  const elapsed = getElapsedSeconds(r.created_at, now);
   const timeMeta = getTimeMeta(elapsed);
 
   return (
@@ -311,6 +312,7 @@ const TicketCard = ({
 const useKitchenWebSocket = (
   wsPort: number,
   onMessage: (rows: QueueRow[], chefs: Chef[]) => void,
+  onConnectionChange: (connected: boolean) => void,
 ) => {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -320,30 +322,50 @@ const useKitchenWebSocket = (
 
     const connect = () => {
       if (dead) return;
+
       const proto = window.location.protocol === "https:" ? "wss" : "ws";
       const host = window.location.hostname;
       const url = `${proto}://${host}:${wsPort}`;
+
       const ws = new WebSocket(url);
       wsRef.current = ws;
 
+      ws.onopen = () => {
+        onConnectionChange(true);
+      };
+
+      // ws.onmessage = (ev) => {
+      //   try {
+      //     const data = JSON.parse(ev.data);
+      //     if (data.type === "state" && Array.isArray(data.rows)) {
+      //       onMessage(data.rows, data.chefs ?? []);
+      //     }
+      //   } catch {
+      //     /* ignore */
+      //   }
+      // };
+
       ws.onmessage = (ev) => {
+        console.log("📩 WS message:", ev.data);
         try {
           const data = JSON.parse(ev.data);
           if (data.type === "state" && Array.isArray(data.rows)) {
             onMessage(data.rows, data.chefs ?? []);
           }
-        } catch {
-          /* ignore */
-        }
+        } catch {}
       };
 
       ws.onclose = () => {
+        onConnectionChange(false);
+
         if (!dead) {
           reconnectTimer.current = setTimeout(connect, 3000);
         }
       };
 
-      ws.onerror = () => ws.close();
+      ws.onerror = () => {
+        ws.close(); // triggers onclose → cleaner flow
+      };
     };
 
     connect();
@@ -353,7 +375,7 @@ const useKitchenWebSocket = (
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
       wsRef.current?.close();
     };
-  }, [wsPort, onMessage]);
+  }, [wsPort, onMessage, onConnectionChange]);
 };
 
 const apiPost = async (url: string, body: Record<string, unknown>) => {
@@ -385,6 +407,7 @@ export const QueueDisplayBoard = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fullscreenError, setFullscreenError] = useState<string | null>(null);
   const [pendingQueueId, setPendingQueueId] = useState<number | null>(null);
+  const [now, setNow] = useState(Date.now());
   const rootRef = useRef<HTMLDivElement>(null);
   const mounted = useRef(true);
 
@@ -414,6 +437,14 @@ export const QueueDisplayBoard = ({
         sync as EventListener,
       );
     };
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => clearInterval(id);
   }, []);
 
   const toggleFullscreen = useCallback(async () => {
@@ -458,7 +489,7 @@ export const QueueDisplayBoard = ({
     [],
   );
 
-  useKitchenWebSocket(wsPort, handleWsMessage);
+  useKitchenWebSocket(wsPort, handleWsMessage, setWsConnected);
 
   const pull = useCallback(async () => {
     try {
@@ -671,6 +702,7 @@ export const QueueDisplayBoard = ({
                         chefPassView={isFullscreen}
                         isBusy={pendingQueueId === r.queue_id}
                         animDelayMs={Math.min(idx, 10) * 42}
+                        now={now}
                         onAdvance={() => handleAdvance(r)}
                         onRemove={
                           r.Status === "Served"

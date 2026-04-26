@@ -38,12 +38,12 @@ const getOrCreateWss = (): WebSocketServer => {
     }
   });
 
-  wss.on("connection", (ws) => {
+  wss.on("connection", async (ws) => {
     try {
       const payload = JSON.stringify({
         type: "state",
-        rows: listKitchenQueue(),
-        chefs: listChefs(),
+        rows: await listKitchenQueue(),
+        chefs: await listChefs(),
       });
       ws.send(payload);
     } catch {
@@ -55,14 +55,14 @@ const getOrCreateWss = (): WebSocketServer => {
 };
 
 /** Broadcast current kitchen state to every connected client. */
-export const broadcastKitchenState = () => {
+export const broadcastKitchenState = async () => {
   const wss = getOrCreateWss();
   let payload: string;
   try {
     payload = JSON.stringify({
       type: "state",
-      rows: listKitchenQueue(),
-      chefs: listChefs(),
+      rows: await listKitchenQueue(),
+      chefs: await listChefs(),
     });
   } catch {
     return;
