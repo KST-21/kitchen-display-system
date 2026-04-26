@@ -65,7 +65,7 @@ export const MenuItemFormDialog = ({
             </label>
 
             <label className="flex flex-col gap-1.5 text-sm font-medium text-slate-700">
-              Price (USD)
+              Price (THB)
               <input
                 name="price"
                 type="number"

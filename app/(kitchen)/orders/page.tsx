@@ -81,14 +81,14 @@ const OrdersPage = async () => {
                     <span className="font-medium">{i.item_name}</span> ×{" "}
                     {i.quantity}
                     <span className="float-right">
-                      ${(i.price * i.quantity).toFixed(2)}
+                      THB {(i.price * i.quantity).toFixed(2)}
                     </span>
                   </li>
                 ))}
               </ul>
 
               <div className="mt-3 text-right font-medium">
-                Subtotal: ${subtotal.toFixed(2)}
+                Subtotal: THB {subtotal.toFixed(2)}
               </div>
             </div>
           ))

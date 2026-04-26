@@ -164,7 +164,7 @@ export const OrderForm = ({
                 >
                   {available.map((m) => (
                     <option key={m.menu_id} value={m.menu_id}>
-                      {m.item_name} (${m.price.toFixed(2)})
+                      {m.item_name} (THB {m.price.toFixed(2)})
                     </option>
                   ))}
                 </select>

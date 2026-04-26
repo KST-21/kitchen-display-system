@@ -73,8 +73,7 @@ export const GuestOrderForm = ({
   );
 
   const cartQtyOf = useCallback(
-    (menuId: number) =>
-      lines.find((l) => l.menuId === menuId)?.quantity ?? 0,
+    (menuId: number) => lines.find((l) => l.menuId === menuId)?.quantity ?? 0,
     [lines],
   );
 
@@ -150,10 +149,7 @@ export const GuestOrderForm = ({
         >
           <div className="relative w-full max-w-sm rounded-3xl bg-white p-8 text-center shadow-2xl">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
-              <Check
-                className="h-8 w-8 text-emerald-600"
-                strokeWidth={2.5}
-              />
+              <Check className="h-8 w-8 text-emerald-600" strokeWidth={2.5} />
             </div>
             <h2 className="mt-5 text-2xl font-bold text-slate-900">
               Order sent!
@@ -213,10 +209,7 @@ export const GuestOrderForm = ({
                       >
                         <div className="flex items-start gap-3">
                           <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-slate-100">
-                            <MenuTileImage
-                              src={mi?.image_url ?? null}
-                              alt=""
-                            />
+                            <MenuTileImage src={mi?.image_url ?? null} alt="" />
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-start justify-between gap-2">
@@ -256,7 +249,7 @@ export const GuestOrderForm = ({
                                 </button>
                               </div>
                               <span className="text-sm font-bold tabular-nums text-amber-700">
-                                ${lineTotal.toFixed(2)}
+                                THB {lineTotal.toFixed(2)}
                               </span>
                             </div>
 
@@ -288,7 +281,7 @@ export const GuestOrderForm = ({
                   Total
                 </span>
                 <span className="text-lg font-bold tabular-nums text-slate-900">
-                  ${total.toFixed(2)}
+                  THB {total.toFixed(2)}
                 </span>
               </div>
             )}
@@ -317,8 +310,8 @@ export const GuestOrderForm = ({
             Menu
           </h2>
           <p className="mt-0.5 text-xs text-slate-500">
-            Tap <span className="font-bold text-amber-600">+</span> to add
-            items to your order.
+            Tap <span className="font-bold text-amber-600">+</span> to add items
+            to your order.
           </p>
 
           <ul className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
@@ -342,7 +335,7 @@ export const GuestOrderForm = ({
                     </div>
                     <div className="flex items-center justify-between gap-2 px-2.5 py-2">
                       <span className="text-sm font-bold tabular-nums text-slate-900">
-                        ${m.price.toFixed(2)}
+                        THB {m.price.toFixed(2)}
                       </span>
                       <button
                         type="button"
@@ -380,7 +373,7 @@ export const GuestOrderForm = ({
                 View Cart
               </span>
               <span className="text-sm font-bold tabular-nums">
-                ${total.toFixed(2)}
+                THB {total.toFixed(2)}
               </span>
             </button>
           ) : (

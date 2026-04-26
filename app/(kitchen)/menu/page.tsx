@@ -97,7 +97,7 @@ const MenuPage = async ({
                   {r.item_name}
                 </td>
                 <td className="px-3 py-3 tabular-nums">
-                  ${r.price.toFixed(2)}
+                  THB {r.price.toFixed(2)}
                 </td>
                 <td className="px-3 py-3">{r.is_available ? "Yes" : "No"}</td>
                 <td className="px-3 py-3">
@@ -132,11 +132,7 @@ const MenuPage = async ({
                     )}
                     {isAdmin && (
                       <form action={deleteMenuItemAction} className="inline">
-                        <input
-                          type="hidden"
-                          name="menu_id"
-                          value={r.menu_id}
-                        />
+                        <input type="hidden" name="menu_id" value={r.menu_id} />
                         <button
                           type="submit"
                           disabled={!r.can_delete}

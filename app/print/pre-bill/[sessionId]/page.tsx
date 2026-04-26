@@ -72,8 +72,7 @@ const PreBillPage = async ({
             year: "numeric",
             month: "short",
             day: "numeric",
-          })}
-          {" "}
+          })}{" "}
           {now.toLocaleTimeString("en-US", {
             hour: "2-digit",
             minute: "2-digit",
@@ -100,11 +99,14 @@ const PreBillPage = async ({
             </thead>
             <tbody>
               {lines.map((l, idx) => (
-                <tr key={idx} className="border-b border-dotted border-slate-200">
+                <tr
+                  key={idx}
+                  className="border-b border-dotted border-slate-200"
+                >
                   <td className="py-1.5 pr-2 text-slate-800">{l.name}</td>
                   <td className="py-1.5 text-center text-slate-600">{l.qty}</td>
                   <td className="py-1.5 text-right font-medium">
-                    ${(l.price * l.qty).toFixed(2)}
+                    THB {(l.price * l.qty).toFixed(2)}
                   </td>
                 </tr>
               ))}
@@ -118,7 +120,7 @@ const PreBillPage = async ({
         <div className="space-y-1 text-sm">
           <div className="flex justify-between">
             <span className="text-slate-500">Subtotal</span>
-            <span className="font-semibold">${subtotal.toFixed(2)}</span>
+            <span className="font-semibold">THB {subtotal.toFixed(2)}</span>
           </div>
         </div>
 
