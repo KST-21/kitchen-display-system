@@ -1,42 +1,26 @@
-/**
- * Singleton WebSocket server running alongside Next.js dev/prod.
- * Broadcasts kitchen state (queue rows + chefs) to all connected clients
- * whenever data changes.
- */
-
 import { WebSocketServer, WebSocket } from "ws";
 import { listChefs, listKitchenQueue } from "@/lib/kitchen-db";
 
-const WS_PORT = Number(process.env.WS_PORT) || 3001;
+const PORT = Number(process.env.WS_PORT || 3001);
+
+/**
+ * MODE:
+ * - "local"  → Next.js dev (shared process)
+ * - "railway" → standalone WS server
+ */
+const MODE = process.env.WS_MODE || "local";
 
 const globalForWs = globalThis as unknown as {
-  __kitchenWss?: WebSocketServer;
-  __kitchenWsReady?: boolean;
+  __wss?: WebSocketServer;
 };
 
-const getOrCreateWss = (): WebSocketServer => {
-  if (globalForWs.__kitchenWss) return globalForWs.__kitchenWss;
+const createServer = () => {
+  if (globalForWs.__wss) return globalForWs.__wss;
 
-  const wss = new WebSocketServer({ port: WS_PORT });
-  globalForWs.__kitchenWss = wss;
-  globalForWs.__kitchenWsReady = true;
+  const wss = new WebSocketServer({ port: PORT });
+  globalForWs.__wss = wss;
 
-  wss.on("listening", () => {
-    console.log(
-      `[ws] Kitchen WebSocket server listening on ws://localhost:${WS_PORT}`,
-    );
-  });
-
-  wss.on("error", (err: NodeJS.ErrnoException) => {
-    if (err.code === "EADDRINUSE") {
-      console.log(
-        `[ws] Port ${WS_PORT} already in use — reusing existing WS server`,
-      );
-      globalForWs.__kitchenWsReady = true;
-    } else {
-      console.error("[ws] WebSocket server error:", err);
-    }
-  });
+  console.log(`[ws] Server starting in ${MODE} mode on port ${PORT}`);
 
   wss.on("connection", async (ws) => {
     try {
@@ -45,37 +29,48 @@ const getOrCreateWss = (): WebSocketServer => {
         rows: await listKitchenQueue(),
         chefs: await listChefs(),
       });
+
       ws.send(payload);
-    } catch {
-      // DB not ready yet
+    } catch (err) {
+      console.error("[ws] connection init error:", err);
     }
+  });
+
+  wss.on("listening", () => {
+    console.log(`[ws] listening on ws://0.0.0.0:${PORT}`);
+  });
+
+  wss.on("error", (err) => {
+    console.error("[ws] error:", err);
   });
 
   return wss;
 };
 
-/** Broadcast current kitchen state to every connected client. */
+/**
+ * Only start server when appropriate
+ */
+export const ensureWsServer = () => {
+  if (MODE === "railway") return; // Railway runs separate process
+
+  createServer();
+};
+
+/**
+ * Broadcast helper (safe for both modes)
+ */
 export const broadcastKitchenState = async () => {
-  const wss = getOrCreateWss();
-  let payload: string;
-  try {
-    payload = JSON.stringify({
-      type: "state",
-      rows: await listKitchenQueue(),
-      chefs: await listChefs(),
-    });
-  } catch {
-    return;
-  }
+  const wss = createServer();
+
+  const payload = JSON.stringify({
+    type: "state",
+    rows: await listKitchenQueue(),
+    chefs: await listChefs(),
+  });
 
   for (const client of wss.clients) {
     if (client.readyState === WebSocket.OPEN) {
       client.send(payload);
     }
   }
-};
-
-/** Ensure WS server is started (call from server actions / API routes). */
-export const ensureWsServer = () => {
-  getOrCreateWss();
 };

@@ -323,9 +323,13 @@ const useKitchenWebSocket = (
     const connect = () => {
       if (dead) return;
 
-      const proto = window.location.protocol === "https:" ? "wss" : "ws";
-      const host = window.location.hostname;
-      const url = `${proto}://${host}:${wsPort}`;
+      const IS_PROD =
+        typeof window !== "undefined" &&
+        window.location.hostname !== "localhost";
+
+      const url = IS_PROD
+        ? process.env.NEXT_PUBLIC_WS_URL!
+        : "ws://localhost:3001";
 
       const ws = new WebSocket(url);
       wsRef.current = ws;
@@ -334,19 +338,7 @@ const useKitchenWebSocket = (
         onConnectionChange(true);
       };
 
-      // ws.onmessage = (ev) => {
-      //   try {
-      //     const data = JSON.parse(ev.data);
-      //     if (data.type === "state" && Array.isArray(data.rows)) {
-      //       onMessage(data.rows, data.chefs ?? []);
-      //     }
-      //   } catch {
-      //     /* ignore */
-      //   }
-      // };
-
       ws.onmessage = (ev) => {
-        console.log("📩 WS message:", ev.data);
         try {
           const data = JSON.parse(ev.data);
           if (data.type === "state" && Array.isArray(data.rows)) {
