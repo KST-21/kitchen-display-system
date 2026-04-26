@@ -7,7 +7,7 @@ import { Minus, Plus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState, useTransition } from "react";
 
-type Line = { menuId: number; quantity: number; specialRequest: string };
+type Item = { menuId: number; quantity: number; specialRequest: string };
 
 export const OrderForm = ({
   tables,
@@ -22,7 +22,7 @@ export const OrderForm = ({
   const [open, setOpen] = useState(false);
   const available = useMemo(() => menu.filter((m) => m.is_available), [menu]);
   const [tableId, setTableId] = useState(String(tables[0]?.table_id ?? ""));
-  const [lines, setLines] = useState<Line[]>([]);
+  const [items, setItems] = useState<Item[]>([]);
   const [pick, setPick] = useState(String(available[0]?.menu_id ?? ""));
   const [qty, setQty] = useState("1");
   const [note, setNote] = useState("");
@@ -33,14 +33,14 @@ export const OrderForm = ({
   );
 
   const handleSubmitOrder = useCallback(() => {
-    if (!lines.length) return;
+    if (!items.length) return;
     const fd = new FormData();
     fd.set("table_id", tableId);
-    fd.set("lines", JSON.stringify(lines));
+    fd.set("lines", JSON.stringify(items));
     startTransition(async () => {
       const result = await createOrderAction(fd);
       if (result.ok) {
-        setLines([]);
+        setItems([]);
         setOrderError(null);
         setOpen(false);
         router.refresh();
@@ -48,14 +48,14 @@ export const OrderForm = ({
         setOrderError(result.message);
       }
     });
-  }, [lines, tableId, router]);
+  }, [items, tableId, router]);
 
-  const addLine = useCallback(() => {
+  const addItem = useCallback(() => {
     const menuId = Number(pick);
     const q = Math.max(1, parseInt(qty, 10) || 1);
     if (!Number.isFinite(menuId)) return;
     const noteTrim = note.trim();
-    setLines((prev) => {
+    setItems((prev) => {
       const i = prev.findIndex((p) => p.menuId === menuId);
       if (i === -1) {
         return [...prev, { menuId, quantity: q, specialRequest: noteTrim }];
@@ -77,7 +77,7 @@ export const OrderForm = ({
   }, [pick, qty, note]);
 
   const updateQuantity = useCallback((index: number, delta: number) => {
-    setLines((prev) => {
+    setItems((prev) => {
       const next = [...prev];
       const item = next[index]!;
       const newQty = item.quantity + delta;
@@ -88,7 +88,7 @@ export const OrderForm = ({
   }, []);
 
   const removeAt = useCallback((i: number) => {
-    setLines((prev) => prev.filter((_, j) => j !== i));
+    setItems((prev) => prev.filter((_, j) => j !== i));
   }, []);
 
   if (!tables.length || !available.length) {
@@ -192,16 +192,16 @@ export const OrderForm = ({
               </div>
               <button
                 type="button"
-                onClick={addLine}
+                onClick={addItem}
                 className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-white"
               >
-                + Add line
+                + Add item
               </button>
             </div>
 
-            {lines.length > 0 ? (
+            {items.length > 0 ? (
               <ul className="space-y-2">
-                {lines.map((ln, i) => (
+                {items.map((ln, i) => (
                   <li
                     key={i}
                     className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3"
@@ -259,7 +259,7 @@ export const OrderForm = ({
             <button
               type="button"
               onClick={handleSubmitOrder}
-              disabled={!lines.length || pending}
+              disabled={!items.length || pending}
               className="flex-1 rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white shadow transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {pending ? "Placing…" : "Place order"}
