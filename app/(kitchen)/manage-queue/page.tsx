@@ -6,6 +6,7 @@ import { listChefs, listKitchenQueue } from "@/lib/kitchen-db";
 import { QUEUE_STATUSES } from "@/lib/constants/status";
 import { requireRole } from "@/lib/require-role";
 import { format } from "date-fns";
+import { QueueSelects } from "@/components/QueueSelects";
 
 const QueuePage = async ({
   searchParams,
@@ -117,46 +118,14 @@ const QueuePage = async ({
                 </td>
 
                 <td className="px-3 py-3 text-right">
-                  <form
+                  <QueueSelects
+                    queueId={r.queue_id}
+                    currentChefId={r.chef_id}
+                    currentStatus={r.Status}
+                    chefs={chefs}
+                    statuses={QUEUE_STATUSES}
                     action={updateQueueAction}
-                    className="inline-flex flex-wrap items-center justify-end gap-2"
-                  >
-                    <input type="hidden" name="queue_id" value={r.queue_id} />
-
-                    <select
-                      name="chef_id"
-                      defaultValue={r.chef_id ?? ""}
-                      className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs"
-                      aria-label={`Chef for ticket ${r.queueNumber}`}
-                    >
-                      <option value="">Unassigned</option>
-                      {chefs.map((c) => (
-                        <option key={c.chef_id} value={c.chef_id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-
-                    <select
-                      name="queue_status"
-                      defaultValue={r.Status}
-                      className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs"
-                      aria-label={`Prep status for ticket ${r.queueNumber}`}
-                    >
-                      {QUEUE_STATUSES.map((s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ))}
-                    </select>
-
-                    <button
-                      type="submit"
-                      className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800"
-                    >
-                      Apply
-                    </button>
-                  </form>
+                  />
                 </td>
               </tr>
             ))}
