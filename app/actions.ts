@@ -306,22 +306,39 @@ export const getSessionDetailsAction = async (sessionId: number) => {
   };
 };
 
-export const loginAction = async (formData: FormData) => {
+type LoginState = {
+  error?: string;
+  email?: string;
+};
+
+export const loginAction = async (
+  _prevState: LoginState | null | void,
+  formData: FormData,
+): Promise<LoginState | void> => {
   const email = String(formData.get("email"));
   const password = String(formData.get("password"));
 
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) return;
+  if (!user) {
+    return {
+      error: "Invalid email or password",
+      email,
+    };
+  }
 
   const ok = await bcrypt.compare(password, user.password);
-  if (!ok) return;
+  if (!ok) {
+    return {
+      error: "Invalid email or password",
+      email,
+    };
+  }
 
   await setSession({ id: user.user_id, role: user.role });
   redirect("/");
 };
 
 export const logoutAction = async () => {
-  console.log("logging out");
   await clearSession();
   redirect("/login");
 };
