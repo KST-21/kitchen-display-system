@@ -14,6 +14,10 @@ import { prisma } from "@/lib/prisma";
 import { clearSession, setSession } from "@/lib/auth";
 import bcrypt from "bcrypt";
 import { requireRoleAction } from "@/lib/require-role";
+import {
+  getSessionItemsWithOrderInfoPrisma,
+  listActiveSessionsPrisma,
+} from "@/lib/kitchen-db";
 
 const revalidateAll = () => {
   revalidatePath("/", "layout");
@@ -108,14 +112,20 @@ export const updateTableStatusAction = async (formData: FormData) => {
 
   const id = Number(formData.get("table_id"));
   const rawStatus = String(formData.get("status") ?? "").trim();
+
   if (!Number.isFinite(id)) return;
   if (!TABLE_STATUSES.includes(rawStatus as TableStatus)) return;
 
   const status = rawStatus as TableStatus;
+
   await k.updateTableStatus(id, status);
+
   if (status === TableStatus.Occupied) {
     await k.createSessionForTable(id);
+  } else {
+    await k.closeActiveSessionByTableId(id);
   }
+
   revalidateAll();
 };
 
@@ -272,6 +282,28 @@ export const advanceQueueStatusAction = async (formData: FormData) => {
   if (!Number.isFinite(queueId)) return;
   await k.advanceQueueStatus(queueId);
   revalidateAll();
+};
+
+export const listActiveSessionsAction = async () => {
+  return await listActiveSessionsPrisma();
+};
+
+export const getSessionDetailsAction = async (sessionId: number) => {
+  const items = await getSessionItemsWithOrderInfoPrisma(sessionId);
+
+  const mapped = items.map((i) => ({
+    item_name: i.menu.item_name,
+    quantity: i.quantity,
+    price: i.menu.price,
+    special_request: i.special_request,
+  }));
+
+  const subtotal = mapped.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
+  return {
+    items: mapped,
+    subtotal,
+  };
 };
 
 export const loginAction = async (formData: FormData) => {

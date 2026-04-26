@@ -77,10 +77,19 @@ export const OrderForm = ({
 
   if (!tables.length || !available.length) {
     return (
-      <p className="text-sm text-amber-800">
-        Add at least one table and one available menu item first (Tables and
-        Menu).
-      </p>
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">
+        <h3 className="font-semibold">No occupied tables</h3>
+        <p className="mt-1">
+          Set at least one table to{" "}
+          <span className="font-medium">Occupied</span> to start placing orders.
+        </p>
+
+        <p className="mt-3 text-xs text-amber-700">
+          This form is intended for staff use (e.g. walk-in customers or
+          corrections). Guests typically place orders by scanning the QR code at
+          their table.
+        </p>
+      </div>
     );
   }
 
