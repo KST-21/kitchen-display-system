@@ -214,14 +214,7 @@ const TicketCard = ({
             big ? "text-4xl sm:text-5xl" : "text-2xl sm:text-3xl"
           }`}
         >
-          {r.queueNumber}
-        </span>
-        <span
-          className={`rounded-md bg-white/60 px-1.5 py-0.5 font-semibold text-slate-700 ring-1 ring-slate-900/5 backdrop-blur-sm ${
-            big ? "text-sm" : "text-xs"
-          }`}
-        >
-          T{r.table_number}
+          Table {r.table_number}
         </span>
       </div>
 
