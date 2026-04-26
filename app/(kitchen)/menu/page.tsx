@@ -1,8 +1,8 @@
-import { deleteMenuItemAction, upsertMenuItemAction } from "@/app/actions";
+import { deleteMenuItemAction } from "@/app/actions";
+import { MenuItemFormDialog } from "@/components/MenuItemFormDialog";
 import { SortHeader } from "@/components/SortHeader";
 import { parseSortParams, sort } from "@/lib/utils/sort";
 import { listMenuItemsWithDeleteFlag } from "@/lib/kitchen-db";
-import Link from "next/link";
 import { hasRole, requireRole } from "@/lib/require-role";
 import { Role } from "@prisma/client";
 
@@ -10,7 +10,6 @@ const MenuPage = async ({
   searchParams,
 }: {
   searchParams: Promise<{
-    edit?: string;
     error?: string;
     sortKey?: string;
     dir?: string;
@@ -21,9 +20,7 @@ const MenuPage = async ({
   const isAdmin = await hasRole([Role.ADMIN]);
 
   const sp = await searchParams;
-  const editId = sp.edit ? Number(sp.edit) : null;
   const allRows = await listMenuItemsWithDeleteFlag();
-  const editing = editId ? allRows.find((r) => r.menu_id === editId) : null;
   const { sortKey, dir } = parseSortParams(sp);
   const rows = sort(allRows, sortKey, dir, {
     menu_id: (r) => r.menu_id,
@@ -66,76 +63,12 @@ const MenuPage = async ({
       ) : null}
 
       {isAdmin && (
-        <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-sm font-medium text-slate-900">
-            {editing ? "Edit item" : "Add item"}
-          </h3>
-          <form
-            action={upsertMenuItemAction}
-            className="mt-4 flex flex-wrap items-end gap-4"
-          >
-            {editing ? (
-              <input type="hidden" name="menu_id" value={editing.menu_id} />
-            ) : null}
-            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-              Item name
-              <input
-                name="item_name"
-                required
-                defaultValue={editing?.item_name ?? ""}
-                className="w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-              Price (USD)
-              <input
-                name="price"
-                type="number"
-                step="0.01"
-                min="0"
-                required
-                defaultValue={editing?.price ?? ""}
-                className="w-32 rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              />
-            </label>
-            <label className="flex min-w-[min(100%,28rem)] flex-1 flex-col gap-1 text-xs font-medium text-slate-600">
-              Image URL{" "}
-              <span className="font-normal text-slate-400">
-                (optional — shown on guest QR menu)
-              </span>
-              <input
-                name="image_url"
-                type="url"
-                inputMode="url"
-                placeholder="https://… or /your-file.jpg in public/"
-                defaultValue={editing?.image_url ?? ""}
-                className="w-full max-w-xl rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              />
-            </label>
-            <label className="flex items-center gap-2 pt-5 text-sm text-slate-700">
-              <input
-                type="checkbox"
-                name="is_available"
-                defaultChecked={editing ? editing.is_available : true}
-                className="h-4 w-4 rounded border-slate-300"
-              />
-              Available
-            </label>
-            <button
-              type="submit"
-              className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-slate-950 hover:bg-amber-400"
-            >
-              {editing ? "Save" : "Add"}
+        <div className="mt-6">
+          <MenuItemFormDialog>
+            <button className="inline-block rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow hover:bg-slate-800">
+              + Add item
             </button>
-            {editing ? (
-              <Link
-                href="/menu"
-                className="text-sm text-slate-600 underline hover:text-slate-900"
-              >
-                Cancel edit
-              </Link>
-            ) : null}
-          </form>
+          </MenuItemFormDialog>
         </div>
       )}
 
@@ -181,29 +114,44 @@ const MenuPage = async ({
                   )}
                 </td>
                 <td className="px-3 py-3 text-right">
-                  <Link
-                    href={`/menu?edit=${r.menu_id}`}
-                    className="text-amber-700 hover:underline"
-                  >
-                    Edit
-                  </Link>
-                  {isAdmin && (
-                    <form action={deleteMenuItemAction} className="ml-4 inline">
-                      <input type="hidden" name="menu_id" value={r.menu_id} />
-                      <button
-                        type="submit"
-                        disabled={!r.can_delete}
-                        className="text-red-600 hover:underline disabled:cursor-not-allowed disabled:opacity-40"
-                        title={
-                          r.can_delete
-                            ? "Delete item"
-                            : "On past orders — mark unavailable instead"
-                        }
+                  <span className="inline-flex flex-wrap items-center justify-end gap-3">
+                    {isAdmin && (
+                      <MenuItemFormDialog
+                        editing={{
+                          menu_id: r.menu_id,
+                          item_name: r.item_name,
+                          price: r.price,
+                          is_available: r.is_available,
+                          image_url: r.image_url,
+                        }}
                       >
-                        Delete
-                      </button>
-                    </form>
-                  )}
+                        <button className="text-amber-700 hover:underline">
+                          Edit
+                        </button>
+                      </MenuItemFormDialog>
+                    )}
+                    {isAdmin && (
+                      <form action={deleteMenuItemAction} className="inline">
+                        <input
+                          type="hidden"
+                          name="menu_id"
+                          value={r.menu_id}
+                        />
+                        <button
+                          type="submit"
+                          disabled={!r.can_delete}
+                          className="text-red-600 hover:underline disabled:cursor-not-allowed disabled:opacity-40"
+                          title={
+                            r.can_delete
+                              ? "Delete item"
+                              : "On past orders — mark unavailable instead"
+                          }
+                        >
+                          Delete
+                        </button>
+                      </form>
+                    )}
+                  </span>
                 </td>
               </tr>
             ))}
