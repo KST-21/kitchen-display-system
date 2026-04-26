@@ -1,6 +1,13 @@
+"use client";
+
 import { loginAction } from "@/app/actions";
+import { useActionState } from "react";
 
 const LoginPage = () => {
+  const [state, formAction] = useActionState(loginAction, null);
+
+  const hasError = !!state?.error;
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
       <div className="w-full max-w-md sm:max-w-lg rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
@@ -12,18 +19,34 @@ const LoginPage = () => {
           Enter your credentials to access the system.
         </p>
 
-        <form action={loginAction} className="mt-8 space-y-5">
+        <form action={formAction} className="mt-8 space-y-5">
           <input
             name="email"
+            defaultValue={state?.email || ""}
             placeholder="Email"
-            className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+            className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition
+              ${
+                hasError
+                  ? "border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-200"
+                  : "border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+              }`}
           />
+
           <input
             name="password"
             type="password"
             placeholder="Password"
-            className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+            className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition
+              ${
+                hasError
+                  ? "border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-200"
+                  : "border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+              }`}
           />
+
+          {state?.error && (
+            <p className="text-sm text-red-500">{state.error}</p>
+          )}
 
           <button className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white shadow hover:bg-slate-800">
             Login
