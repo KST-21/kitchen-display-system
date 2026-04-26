@@ -18,8 +18,8 @@ const GuestOrderPage = async ({
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50/90 via-white to-slate-100 pb-10 pt-6 sm:pt-10">
-      <div className="mx-auto max-w-lg px-4">
-        <header className="relative overflow-hidden rounded-3xl border border-white/60 bg-white/70 px-6 py-8 text-center shadow-lg shadow-amber-900/5 ring-1 ring-slate-900/[0.04] backdrop-blur-md">
+      <div className="mx-auto max-w-md px-4 md:max-w-3xl lg:max-w-5xl xl:max-w-6xl">
+        <header className="relative mx-auto max-w-xl overflow-hidden rounded-3xl border border-white/60 bg-white/70 px-6 py-8 text-center shadow-lg shadow-amber-900/5 ring-1 ring-slate-900/[0.04] backdrop-blur-md">
           <div
             className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-amber-200/40 blur-3xl"
             aria-hidden
