@@ -230,14 +230,16 @@ const TicketCard = ({
         <span className="ml-2 text-slate-600">×{r.quantity}</span>
       </div>
 
-      <div
-        className={`flex items-center gap-1.5 mt-1 ${
-          big ? "text-sm" : "text-xs"
-        } ${timeMeta.timeColor}`}
-      >
-        <Timer className={big ? "h-4 w-4" : "h-3.5 w-3.5"} />
-        <span className="font-semibold">{formatElapsed(elapsed)}</span>
-      </div>
+      {!isServed && (
+        <div
+          className={`flex items-center gap-1.5 mt-1 ${
+            big ? "text-sm" : "text-xs"
+          } ${timeMeta.timeColor}`}
+        >
+          <Timer className={big ? "h-4 w-4" : "h-3.5 w-3.5"} />
+          <span className="font-semibold">{formatElapsed(elapsed)}</span>
+        </div>
+      )}
 
       {r.special_request && (
         <div
