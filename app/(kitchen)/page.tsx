@@ -44,16 +44,16 @@ const DashboardPage = async () => {
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Link
-            href="/queue"
+            href="/manage-queue"
             className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow hover:bg-slate-800"
           >
-            Kitchen queue
+            Manage queue
           </Link>
           <Link
-            href="/display/queue"
+            href="/display/kitchen-queue"
             className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 shadow-sm hover:bg-slate-50"
           >
-            Queue display
+            Kitchen Queue display
           </Link>
         </div>
       </div>
