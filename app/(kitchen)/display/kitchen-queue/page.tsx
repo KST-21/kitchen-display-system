@@ -13,7 +13,7 @@ const QueueDisplayPage = async () => {
       initialRows={initialRows}
       initialChefs={initialChefs}
       wsPort={Number(process.env.WS_PORT) || 3001}
-      pollIntervalSeconds={10}
+      pollIntervalSeconds={3}
     />
   );
 };
